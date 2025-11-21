@@ -1,0 +1,13 @@
+<?xml version="1.0"?>
+<TcSmProject xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.beckhoff.com/schemas/2012/07/TcSmProject" TcSmVersion="1.0" TcVersion="3.1.4026.17">
+	<Project ProjectGUID="{6BBE3BE5-772E-4002-99E1-B5337346D6C3}" TargetNetId="39.45.137.26.1.1" Target64Bit="true" ShowHideConfigurations="#x6">
+		<Plc>
+			<Project GUID="{0C1C8CC9-AC32-4148-A52A-565DABBF4108}" Name="CycleManagerInterfaceTests" PrjFilePath="CycleManagerInterfaceTests\CycleManagerInterfaceTests.plcproj" TmcFilePath="CycleManagerInterfaceTests\CycleManagerInterfaceTests.tmc" ReloadTmc="true" AmsPort="851" FileArchiveSettings="#x000e" SymbolicMapping="true">
+				<Instance Id="#x08502000" TcSmClass="TComPlcObjDef" KeepUnrestoredLinks="2" TmcHash="{014F64A7-3DDF-CCB3-2D9C-FEFC610B0DFB}" TmcPath="CycleManagerInterfaceTests\CycleManagerInterfaceTests.tmc">
+					<Name>CycleManagerInterfaceTests Instance</Name>
+					<CLSID ClassFactory="TcPlc30">{08500001-0000-0000-F000-000000000064}</CLSID>
+				</Instance>
+			</Project>
+		</Plc>
+	</Project>
+</TcSmProject>

@@ -1,0 +1,71 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1">
+  <Itf Name="ISteppingConfiguration" Id="{bc2ce7bb-12b4-465d-815b-ab9c863bb747}">
+    <Declaration><![CDATA[(*
+
+## Short summary
+An interface to provide stepping behaviour to cycle managers.
+
+.. <legal notes>
+
+legal notes
+=================
+| SPDX-FileCopyrightText: © 2024 ekvip automation GmbH <info@ekvip.de>
+| SPDX-License-Identifier: Apache-2.0
+| For details check: Apache-2.0_
+
+.. _Apache-2.0: https://www.apache.org/licenses/LICENSE-2.0
+
+.. </legal notes>
+
+
+
+*)
+INTERFACE ISteppingConfiguration EXTENDS __System.IQueryInterface
+]]></Declaration>
+    <Method Name="disable" Id="{9a0b09b2-b91c-4385-be31-7d8ba734ec8f}">
+      <Declaration><![CDATA[(*
+
+## Short summary
+This method disables step mode, allowing automatic proceeding without using the step signal.
+
+.. <legal notes>
+
+legal notes
+=================
+| SPDX-FileCopyrightText: © 2024 ekvip automation GmbH <info@ekvip.de>
+| SPDX-License-Identifier: Apache-2.0
+| For details check: Apache-2.0_
+
+.. _Apache-2.0: https://www.apache.org/licenses/LICENSE-2.0
+
+.. </legal notes>
+
+*)
+METHOD disable
+]]></Declaration>
+    </Method>
+    <Method Name="enable" Id="{a5e0b2d7-70f2-4763-b058-aff845548b46}">
+      <Declaration><![CDATA[(*
+
+## Short summary
+This method enables step mode, only allowing automatic proceeding if the step signal is active.
+
+.. <legal notes>
+
+legal notes
+=================
+| SPDX-FileCopyrightText: © 2024 ekvip automation GmbH <info@ekvip.de>
+| SPDX-License-Identifier: Apache-2.0
+| For details check: Apache-2.0_
+
+.. _Apache-2.0: https://www.apache.org/licenses/LICENSE-2.0
+
+.. </legal notes>
+
+*)
+METHOD enable
+]]></Declaration>
+    </Method>
+  </Itf>
+</TcPlcObject>

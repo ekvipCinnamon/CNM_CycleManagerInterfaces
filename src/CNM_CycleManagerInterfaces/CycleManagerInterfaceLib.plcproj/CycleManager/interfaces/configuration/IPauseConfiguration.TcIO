@@ -1,0 +1,72 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1">
+  <Itf Name="IPauseConfiguration" Id="{13d247f0-87fe-466c-a94c-534ecf22cc05}">
+    <Declaration><![CDATA[(*
+
+## Short summary
+An interface to enable and diable pause functionallity.
+
+.. <legal notes>
+
+legal notes
+=================
+| SPDX-FileCopyrightText: © 2024 ekvip automation GmbH <info@ekvip.de>
+| SPDX-License-Identifier: Apache-2.0
+| For details check: Apache-2.0_
+
+.. _Apache-2.0: https://www.apache.org/licenses/LICENSE-2.0
+
+.. </legal notes>
+
+
+
+*)
+INTERFACE IPauseConfiguration EXTENDS __System.IQueryInterface
+]]></Declaration>
+    <Method Name="disable" Id="{5df7d8bb-81d3-4d38-aad4-278a3584a050}">
+      <Declaration><![CDATA[(*
+
+## Short summary
+This method disables pausing, disabling the cycle manager transition to PAUSED even if pause signal is active.
+
+.. <legal notes>
+
+legal notes
+=================
+| SPDX-FileCopyrightText: © 2024 ekvip automation GmbH <info@ekvip.de>
+| SPDX-License-Identifier: Apache-2.0
+| For details check: Apache-2.0_
+
+.. _Apache-2.0: https://www.apache.org/licenses/LICENSE-2.0
+
+.. </legal notes>
+
+*)
+METHOD disable
+]]></Declaration>
+    </Method>
+    <Method Name="enable" Id="{b662e530-6daf-41e6-9f8d-1b857860bcb5}">
+      <Declaration><![CDATA[(*
+
+## Short summary
+This method enables pausing, allowing the cycle manager to transition to PAUSED state if pause is active.
+
+.. <legal notes>
+
+legal notes
+=================
+| SPDX-FileCopyrightText: © 2024 ekvip automation GmbH <info@ekvip.de>
+| SPDX-License-Identifier: Apache-2.0
+| For details check: Apache-2.0_
+
+.. _Apache-2.0: https://www.apache.org/licenses/LICENSE-2.0
+
+.. </legal notes>
+
+*)
+
+METHOD enable
+]]></Declaration>
+    </Method>
+  </Itf>
+</TcPlcObject>

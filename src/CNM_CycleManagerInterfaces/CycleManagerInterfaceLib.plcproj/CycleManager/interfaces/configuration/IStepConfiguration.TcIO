@@ -1,0 +1,28 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1">
+  <Itf Name="IStepConfiguration" Id="{8beeaa10-271e-454b-914f-4e3d6d755ce1}">
+    <Declaration><![CDATA[(*
+
+## Short summary
+An interface to provide configurations for cycle manager steps.
+Should only affect the currently active step.
+
+.. <legal notes>
+
+legal notes
+=================
+| SPDX-FileCopyrightText: © 2024 ekvip automation GmbH <info@ekvip.de>
+| SPDX-License-Identifier: Apache-2.0
+| For details check: Apache-2.0_
+
+.. _Apache-2.0: https://www.apache.org/licenses/LICENSE-2.0
+
+.. </legal notes>
+
+
+
+*)
+INTERFACE IStepConfiguration EXTENDS ICycleManagerParameters
+]]></Declaration>
+  </Itf>
+</TcPlcObject>

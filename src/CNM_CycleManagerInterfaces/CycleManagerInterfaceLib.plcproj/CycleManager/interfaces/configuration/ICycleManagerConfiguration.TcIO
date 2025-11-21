@@ -1,0 +1,53 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1">
+  <Itf Name="ICycleManagerConfiguration" Id="{3bf49462-dc4c-4d03-9765-19aadd3f190d}">
+    <Declaration><![CDATA[(*
+
+## Short summary
+An interface to provide configurations for cycle manager in a fluent way.
+
+.. <legal notes>
+
+legal notes
+=================
+| SPDX-FileCopyrightText: © 2024 ekvip automation GmbH <info@ekvip.de>
+| SPDX-License-Identifier: Apache-2.0
+| For details check: Apache-2.0_
+
+.. _Apache-2.0: https://www.apache.org/licenses/LICENSE-2.0
+
+.. </legal notes>
+
+
+
+*)
+INTERFACE ICycleManagerConfiguration EXTENDS __SYSTEM.IQueryInterface
+]]></Declaration>
+    <Property Name="configuration" Id="{2acb9e2b-dfdf-4c1e-a195-c1c610e7afa9}">
+      <Declaration><![CDATA[(*
+
+## Short summary
+An interface to provide configurations for cycle manager in a fluent way.
+
+.. <legal notes>
+
+legal notes
+=================
+| SPDX-FileCopyrightText: © 2024 ekvip automation GmbH <info@ekvip.de>
+| SPDX-License-Identifier: Apache-2.0
+| For details check: Apache-2.0_
+
+.. _Apache-2.0: https://www.apache.org/licenses/LICENSE-2.0
+
+.. </legal notes>
+
+
+
+*)
+PROPERTY configuration : ICycleManagerConfigurationScope]]></Declaration>
+      <Get Name="Get" Id="{9b45888a-fbf4-4a87-84bd-40c7ad8e0bb6}">
+        <Declaration><![CDATA[]]></Declaration>
+      </Get>
+    </Property>
+  </Itf>
+</TcPlcObject>

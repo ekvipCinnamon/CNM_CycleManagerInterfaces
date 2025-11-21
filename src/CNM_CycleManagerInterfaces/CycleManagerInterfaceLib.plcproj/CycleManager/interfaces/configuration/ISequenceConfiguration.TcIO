@@ -1,0 +1,67 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1">
+  <Itf Name="ISequenceConfiguration" Id="{f87c17c2-55d5-49d1-8343-7207fe2c57fc}">
+    <Declaration><![CDATA[(*
+
+## Short summary
+An interface to provide configurations for all cycle manager steps.
+Should affect the all steps in the cycle manager (default values).
+
+.. <legal notes>
+
+legal notes
+=================
+| SPDX-FileCopyrightText: © 2024 ekvip automation GmbH <info@ekvip.de>
+| SPDX-License-Identifier: Apache-2.0
+| For details check: Apache-2.0_
+
+.. _Apache-2.0: https://www.apache.org/licenses/LICENSE-2.0
+
+.. </legal notes>
+
+
+
+*)
+INTERFACE ISequenceConfiguration EXTENDS ICycleManagerParameters
+]]></Declaration>
+    <Property Name="requireSuccessStep" Id="{ca7ef0ed-cea6-4839-887b-bf87562c3724}">
+      <Declaration><![CDATA[(*
+
+## Short summary
+Specifies whether the SUCCESS step of the state machine can be skipped when the transition condition to SUCCESS is already fulfilled.
+
+When set to false, the state machine immediately returns SUCCESS as soon as the transition condition to the SUCCESS state is met, 
+without executing the dedicated SUCCESS step. This optimization can save one execution cycle per state machine invocation, which is 
+especially beneficial in nested or complex state machine structures.
+
+When set to true, the SUCCESS step will always be executed at least once before the state machine returns SUCCESS. This is required 
+in cases where the SUCCESS step performs essential actions (e.g., resetting outputs, logging, or cleanup).
+
+The default value is false.
+
+### Use Case
+Use false when the SUCCESS step has no functional side effects and skipping it can improve performance.
+Use true when the SUCCESS step contains logic that must be executed explicitly.
+
+.. <legal notes>
+
+legal notes
+=================
+| SPDX-FileCopyrightText: © 2025 ekvip automation GmbH <info@ekvip.de>
+| SPDX-License-Identifier: Apache-2.0
+| For details check: Apache-2.0_
+
+.. _Apache-2.0: https://www.apache.org/licenses/LICENSE-2.0
+
+.. </legal notes>
+
+*)
+
+PROPERTY requireSuccessStep : BOOL
+]]></Declaration>
+      <Set Name="Set" Id="{a64114a2-a54c-47d2-a73d-3cd8317c7d2a}">
+        <Declaration><![CDATA[]]></Declaration>
+      </Set>
+    </Property>
+  </Itf>
+</TcPlcObject>

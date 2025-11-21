@@ -1,0 +1,294 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1">
+  <Itf Name="ICycleManagerDefaultParameters" Id="{a177c175-32bf-440a-8c43-c545efb08d3d}">
+    <Declaration><![CDATA[(*
+
+## Short summary
+An interface to provide configurations for cycle manager default parameters.
+Used internally to allow better fluent implementation.
+
+.. <legal notes>
+
+legal notes
+=================
+| SPDX-FileCopyrightText: © 2024 ekvip automation GmbH <info@ekvip.de>
+| SPDX-License-Identifier: Apache-2.0
+| For details check: Apache-2.0_
+
+.. _Apache-2.0: https://www.apache.org/licenses/LICENSE-2.0
+
+.. </legal notes>
+
+
+
+*)
+INTERFACE ICycleManagerDefaultParameters EXTENDS __System.IQueryInterface
+]]></Declaration>
+    <Property Name="defaultErrorStep" Id="{3c289f72-9728-49b6-a73b-4b734241e71c}">
+      <Declaration><![CDATA[(*
+
+## Short summary
+This property sets the default error step for all cycle manager operations.
+
+.. <legal notes>
+
+legal notes
+=================
+| SPDX-FileCopyrightText: © 2024 ekvip automation GmbH <info@ekvip.de>
+| SPDX-License-Identifier: Apache-2.0
+| For details check: Apache-2.0_
+
+.. _Apache-2.0: https://www.apache.org/licenses/LICENSE-2.0
+
+.. </legal notes>
+
+*)
+
+PROPERTY defaultErrorStep : DINT
+]]></Declaration>
+      <Set Name="Set" Id="{fca767a3-ce95-40c5-a6ca-2389a6cca029}">
+        <Declaration><![CDATA[]]></Declaration>
+      </Set>
+    </Property>
+    <Property Name="defaultPauseEnabled" Id="{e935ef60-626c-4625-a539-2f482c4a705a}">
+      <Declaration><![CDATA[(*
+
+## Short summary
+This property sets the default pause behavior for all cycle manager operations.
+
+### Usage
+This property configures whether pause functionality is enabled by default for the cycle manager.
+When enabled, the cycle manager will respond to pause signals and can suspend execution at
+appropriate points in the sequence.
+
+The property is write-only and accepts a boolean value to enable or disable pausing.
+
+#### typical usage patterns
+1. **Production mode setup**: Enable pausing for production sequences
+2. **Maintenance configuration**: Enable pausing for maintenance operations
+3. **Automatic operation**: Disable pausing for fully automatic sequences
+4. **Operator control**: Enable pausing to allow operator intervention
+
+#### when to use
+- During cycle manager initialization to set pause behavior
+- When configuring operation modes (automatic vs. manual)
+- For setting up operator control capabilities
+- When implementing safety or emergency stop procedures
+
+#### behavior details
+
+- When enabled: Cycle manager responds to pause input signals
+- When disabled: Pause signals are ignored and sequence continues
+- Affects all steps in the sequence unless overridden locally
+- Can be overridden on a per-step basis using step configuration
+
+**Example:**
+```
+// Enable pause for production mode
+cyclemanager.configuration.sequence.defaultPauseEnabled := TRUE;
+
+// Disable pause for automatic operation
+cyclemanager.configuration.sequence.defaultPauseEnabled := FALSE;
+
+// Configuration based on operation mode
+IF operation_mode = OperationMode.MANUAL THEN
+	cyclemanager.configuration.sequence.defaultPauseEnabled := TRUE;
+ELSE
+	cyclemanager.configuration.sequence.defaultPauseEnabled := FALSE;
+END_IF;
+
+// Safety configuration
+cyclemanager.configuration.sequence
+	.defaultPauseEnabled := enable_safety_pause;
+```
+
+.. <legal notes>
+
+legal notes
+=================
+| SPDX-FileCopyrightText: © 2024 ekvip automation GmbH <info@ekvip.de>
+| SPDX-License-Identifier: Apache-2.0
+| For details check: Apache-2.0_
+
+.. _Apache-2.0: https://www.apache.org/licenses/LICENSE-2.0
+
+.. </legal notes>
+
+*)
+PROPERTY defaultPauseEnabled : BOOL]]></Declaration>
+      <Set Name="Set" Id="{1a53bab1-d36d-4a7b-8bf9-15901bf6c387}">
+        <Declaration><![CDATA[]]></Declaration>
+      </Set>
+    </Property>
+    <Property Name="defaultRequireSuccessStep" Id="{f47b2c81-2454-4335-a3ba-7a13a2bd1f95}">
+      <Declaration><![CDATA[(*
+
+## Short summary
+Specifies whether the SUCCESS step of the state machine can be skipped when the transition condition to SUCCESS is already fulfilled.
+
+When set to false, the state machine immediately returns SUCCESS as soon as the transition condition to the SUCCESS state is met, 
+without executing the dedicated SUCCESS step. This optimization can save one execution cycle per state machine invocation, which is 
+especially beneficial in nested or complex state machine structures.
+
+When set to true, the SUCCESS step will always be executed at least once before the state machine returns SUCCESS. This is required 
+in cases where the SUCCESS step performs essential actions (e.g., resetting outputs, logging, or cleanup).
+
+The default value is false.
+
+### Use Case:
+Use false when the SUCCESS step has no functional side effects and skipping it can improve performance.
+Use true when the SUCCESS step contains logic that must be executed explicitly.
+
+.. <legal notes>
+
+legal notes
+=================
+| SPDX-FileCopyrightText: © 2025 ekvip automation GmbH <info@ekvip.de>
+| SPDX-License-Identifier: Apache-2.0
+| For details check: Apache-2.0_
+
+.. _Apache-2.0: https://www.apache.org/licenses/LICENSE-2.0
+
+.. </legal notes>
+
+*)
+
+PROPERTY defaultRequireSuccessStep : BOOL
+]]></Declaration>
+      <Set Name="Set" Id="{bc7c21f3-4bb2-4506-8a14-0aa982bf1693}">
+        <Declaration><![CDATA[]]></Declaration>
+      </Set>
+    </Property>
+    <Property Name="defaultSteppingEnabled" Id="{ce001c2d-dc7a-4f91-a00a-51a3f2903f35}">
+      <Declaration><![CDATA[(*
+
+## Short summary
+This property sets the default stepping mode configuration after a step change.
+
+.. <legal notes>
+
+legal notes
+=================
+| SPDX-FileCopyrightText: © 2024 ekvip automation GmbH <info@ekvip.de>
+| SPDX-License-Identifier: Apache-2.0
+| For details check: Apache-2.0_
+
+.. _Apache-2.0: https://www.apache.org/licenses/LICENSE-2.0
+
+.. </legal notes>
+
+*)
+
+PROPERTY defaultSteppingEnabled : BOOL
+]]></Declaration>
+      <Set Name="Set" Id="{40012777-d3a2-478f-8912-33bb51e93f4d}">
+        <Declaration><![CDATA[]]></Declaration>
+      </Set>
+    </Property>
+    <Property Name="defaultStepWidth" Id="{9d6d078a-e435-4f70-b23a-885c2c241280}">
+      <Declaration><![CDATA[(*
+
+## Short summary
+This property sets the default the step width.
+
+.. <legal notes>
+
+legal notes
+=================
+| SPDX-FileCopyrightText: © 2024 ekvip automation GmbH <info@ekvip.de>
+| SPDX-License-Identifier: Apache-2.0
+| For details check: Apache-2.0_
+
+.. _Apache-2.0: https://www.apache.org/licenses/LICENSE-2.0
+
+.. </legal notes>
+
+*)
+
+PROPERTY defaultStepWidth : DINT
+]]></Declaration>
+      <Set Name="Set" Id="{32306005-5992-4f25-88d4-8426659a74eb}">
+        <Declaration><![CDATA[]]></Declaration>
+      </Set>
+    </Property>
+    <Property Name="defaultStopRequestMode" Id="{70935e9d-9b6d-4957-8f05-e38d9228de1c}">
+      <Declaration><![CDATA[(*
+
+## Short summary
+This property sets the default step mode configuration. 
+
+.. <legal notes>
+
+legal notes
+=================
+| SPDX-FileCopyrightText: © 2024 ekvip automation GmbH <info@ekvip.de>
+| SPDX-License-Identifier: Apache-2.0
+| For details check: Apache-2.0_
+
+.. _Apache-2.0: https://www.apache.org/licenses/LICENSE-2.0
+
+.. </legal notes>
+
+*)
+
+PROPERTY defaultStopRequestMode :StepStopRequestMode
+]]></Declaration>
+      <Set Name="Set" Id="{09e5f83c-a347-4ba5-9a8e-f92fe84e9242}">
+        <Declaration><![CDATA[]]></Declaration>
+      </Set>
+    </Property>
+    <Property Name="defaultTimeout" Id="{87bc37d7-8477-417d-930a-536e3792b2fa}">
+      <Declaration><![CDATA[(*
+
+## Short summary
+This property sets the maximum execution time for steps. 
+The cycle manager will go into the timeoutStep after the time elapsed.
+
+.. <legal notes>
+
+legal notes
+=================
+| SPDX-FileCopyrightText: © 2024 ekvip automation GmbH <info@ekvip.de>
+| SPDX-License-Identifier: Apache-2.0
+| For details check: Apache-2.0_
+
+.. _Apache-2.0: https://www.apache.org/licenses/LICENSE-2.0
+
+.. </legal notes>
+
+*)
+
+PROPERTY defaultTimeout : TIME
+]]></Declaration>
+      <Set Name="Set" Id="{1279b078-5d68-4ad3-8f46-40be3c65a0c6}">
+        <Declaration><![CDATA[]]></Declaration>
+      </Set>
+    </Property>
+    <Property Name="defaultTimeoutStep" Id="{552cb938-f9f7-4cf4-9de5-200e5f802e0b}">
+      <Declaration><![CDATA[(*
+
+## Short summary
+This property sets the default step that will be set if the current step reaches a timeout. 
+
+.. <legal notes>
+
+legal notes
+=================
+| SPDX-FileCopyrightText: © 2024 ekvip automation GmbH <info@ekvip.de>
+| SPDX-License-Identifier: Apache-2.0
+| For details check: Apache-2.0_
+
+.. _Apache-2.0: https://www.apache.org/licenses/LICENSE-2.0
+
+.. </legal notes>
+
+*)
+
+PROPERTY defaultTimeoutStep : DINT
+]]></Declaration>
+      <Set Name="Set" Id="{4f10e751-0ceb-4862-9493-32aa36b9af9b}">
+        <Declaration><![CDATA[]]></Declaration>
+      </Set>
+    </Property>
+  </Itf>
+</TcPlcObject>

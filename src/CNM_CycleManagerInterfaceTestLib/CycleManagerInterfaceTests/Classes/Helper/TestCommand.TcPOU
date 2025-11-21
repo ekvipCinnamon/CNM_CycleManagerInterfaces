@@ -1,0 +1,138 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1">
+  <POU Name="TestCommand" Id="{36789012-def0-1234-5678-901234567232}" SpecialFunc="None">
+    <Declaration><![CDATA[(*
+
+short summary
+=================
+Test implementation of ICommand interface for unit testing.
+Tracks execution state and call count for verification in tests.
+
+.. <legal notes>
+
+legal notes
+=================
+| SPDX-FileCopyrightText: © 2025 ekvip automation GmbH <info@ekvip.de>
+| SPDX-License-Identifier: Apache-2.0
+| For details check: Apache-2.0_
+
+.. _Apache-2.0: https://www.apache.org/licenses/LICENSE-2.0
+
+.. </legal notes>
+
+methods and properties
+=========================
+
+*)
+FUNCTION_BLOCK TestCommand EXTENDS CNM_AbstractObject.Object IMPLEMENTS CNM_CommandInterfaces.ICommand
+VAR
+	executeWasCalled : BOOL;
+	executeValue : BOOL;
+	callCount : INT;
+	returnStateEx : CNM_ReturnTypes.SingleExecutionState := CNM_ReturnTypes.SingleExecutionState.BUSY;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[]]></ST>
+    </Implementation>
+    <Property Name="className" Id="{69012345-0123-4567-8901-234567895565}">
+      <Declaration><![CDATA[PROPERTY className : CNM_AbstractObject.ClassName
+]]></Declaration>
+      <Get Name="Get" Id="{7a123456-1234-5678-9012-345678906676}">
+        <Declaration><![CDATA[]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[className := 'TestCommand';
+]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Method Name="executeCommand" Id="{47890123-ef01-2345-6789-012345678343}">
+      <Declaration><![CDATA[(*
+
+short summary
+=================
+Executes the test command and tracks execution state.
+Returns the configured execution state for test scenarios.
+
+.. <legal notes>
+
+legal notes
+=================
+| SPDX-FileCopyrightText: © 2025 ekvip automation GmbH <info@ekvip.de>
+| SPDX-License-Identifier: Apache-2.0
+| For details check: Apache-2.0_
+
+.. _Apache-2.0: https://www.apache.org/licenses/LICENSE-2.0
+
+.. </legal notes>
+
+parameters
+=================
+
+*)
+METHOD executeCommand : CNM_ReturnTypes.SingleExecutionState
+VAR_INPUT
+	(* execution control flag *)
+	execute : BOOL;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[THIS^.executeWasCalled := TRUE;
+THIS^.executeValue := execute;
+THIS^.callCount := THIS^.callCount + 1;
+
+executeCommand := THIS^.returnStateEx;
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="reset" Id="{58901234-f012-3456-7890-123456789454}">
+      <Declaration><![CDATA[(*
+
+short summary
+=================
+Resets all test state variables to initial values.
+
+.. <legal notes>
+
+legal notes
+=================
+| SPDX-FileCopyrightText: © 2025 ekvip automation GmbH <info@ekvip.de>
+| SPDX-License-Identifier: Apache-2.0
+| For details check: Apache-2.0_
+
+.. _Apache-2.0: https://www.apache.org/licenses/LICENSE-2.0
+
+.. </legal notes>
+
+*)
+METHOD reset
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[THIS^.executeWasCalled := FALSE;
+THIS^.executeValue := FALSE;
+THIS^.callCount := 0;
+THIS^.returnStateEx := CNM_ReturnTypes.SingleExecutionState.BUSY;
+]]></ST>
+      </Implementation>
+    </Method>
+    <Property Name="returnState" Id="{73403b3f-31d7-421d-949f-b27b84674cc9}">
+      <Declaration><![CDATA[PROPERTY returnState : CNM_ReturnTypes.SingleExecutionState]]></Declaration>
+      <Get Name="Get" Id="{96d02fef-fb2b-417c-a8b3-1f6fad2a0ac2}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[returnState := THIS^.returnStateEx;]]></ST>
+        </Implementation>
+      </Get>
+      <Set Name="Set" Id="{43410ba0-24cc-4c58-a656-1b6d2f7bcdb9}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[THIS^.returnStateEx := returnState;]]></ST>
+        </Implementation>
+      </Set>
+    </Property>
+  </POU>
+</TcPlcObject>

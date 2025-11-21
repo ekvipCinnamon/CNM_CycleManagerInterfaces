@@ -1,0 +1,143 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1">
+  <POU Name="TestSingleAttempt" Id="{8b234567-2345-6789-0123-456789017787}" SpecialFunc="None">
+    <Declaration><![CDATA[(*
+
+short summary
+=================
+Test implementation of ISingleAttempt interface for unit testing.
+Tracks invocation state and configurable return result.
+
+.. <legal notes>
+
+legal notes
+=================
+| SPDX-FileCopyrightText: © 2025 ekvip automation GmbH <info@ekvip.de>
+| SPDX-License-Identifier: Apache-2.0
+| For details check: Apache-2.0_
+
+.. _Apache-2.0: https://www.apache.org/licenses/LICENSE-2.0
+
+.. </legal notes>
+
+methods and properties
+=========================
+
+*)
+FUNCTION_BLOCK TestSingleAttempt EXTENDS CNM_AbstractObject.Object IMPLEMENTS CNM_CommandInterfaces.ISingleAttempt
+VAR
+	wasInvoked : BOOL;
+	returnResultInternal : CNM_ReturnTypes.SingleExecutionResult := CNM_ReturnTypes.SingleExecutionResult.SUCCESS;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[]]></ST>
+    </Implementation>
+    <Property Name="className" Id="{be567890-5678-9abc-3456-789012340010}">
+      <Declaration><![CDATA[PROPERTY className : CNM_AbstractObject.ClassName
+]]></Declaration>
+      <Get Name="Get" Id="{cf678901-6789-abcd-4567-890123451121}">
+        <Declaration><![CDATA[]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[className := 'TestSingleAttempt';
+]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Method Name="invoke" Id="{9c345678-3456-789a-1234-567890128898}">
+      <Declaration><![CDATA[(*
+
+short summary
+=================
+Invokes the single attempt and tracks invocation state.
+Returns the configured result for test scenarios.
+
+.. <legal notes>
+
+legal notes
+=================
+| SPDX-FileCopyrightText: © 2025 ekvip automation GmbH <info@ekvip.de>
+| SPDX-License-Identifier: Apache-2.0
+| For details check: Apache-2.0_
+
+.. _Apache-2.0: https://www.apache.org/licenses/LICENSE-2.0
+
+.. </legal notes>
+
+*)
+METHOD invoke : CNM_ReturnTypes.SingleExecutionResult
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[THIS^.wasInvoked := TRUE;
+invoke := THIS^.returnResultInternal;
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="reset" Id="{ad456789-4567-89ab-2345-678901239909}">
+      <Declaration><![CDATA[(*
+
+short summary
+=================
+Resets the invocation state and return result to defaults.
+
+.. <legal notes>
+
+legal notes
+=================
+| SPDX-FileCopyrightText: © 2025 ekvip automation GmbH <info@ekvip.de>
+| SPDX-License-Identifier: Apache-2.0
+| For details check: Apache-2.0_
+
+.. _Apache-2.0: https://www.apache.org/licenses/LICENSE-2.0
+
+.. </legal notes>
+
+*)
+METHOD reset
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[THIS^.wasInvoked := FALSE;
+THIS^.returnResultInternal := CNM_ReturnTypes.SingleExecutionResult.SUCCESS;
+]]></ST>
+      </Implementation>
+    </Method>
+    <Property Name="ReturnResult" Id="{ea567890-6789-bcde-5678-901234564242}">
+      <Declaration><![CDATA[(*
+
+short summary
+=================
+Gets or sets the return result for the invoke() method.
+Used for test scenarios to control the outcome of the single attempt.
+
+.. <legal notes>
+
+legal notes
+=================
+| SPDX-FileCopyrightText: © 2025 ekvip automation GmbH <info@ekvip.de>
+| SPDX-License-Identifier: Apache-2.0
+| For details check: Apache-2.0_
+
+.. _Apache-2.0: https://www.apache.org/licenses/LICENSE-2.0
+
+.. </legal notes>
+
+*)
+PROPERTY ReturnResult : CNM_ReturnTypes.SingleExecutionResult
+]]></Declaration>
+      <Get Name="Get" Id="{fb678901-7890-cdef-6789-012345675353}">
+        <Declaration><![CDATA[]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[ReturnResult := THIS^.returnResultInternal;
+]]></ST>
+        </Implementation>
+      </Get>
+      <Set Name="Set" Id="{fc789012-8901-def0-7890-123456786464}">
+        <Declaration><![CDATA[]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[THIS^.returnResultInternal := ReturnResult;
+]]></ST>
+        </Implementation>
+      </Set>
+    </Property>
+  </POU>
+</TcPlcObject>

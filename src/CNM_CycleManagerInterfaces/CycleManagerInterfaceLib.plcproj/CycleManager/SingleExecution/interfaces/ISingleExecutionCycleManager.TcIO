@@ -1,0 +1,469 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1">
+  <Itf Name="ISingleExecutionCycleManager" Id="{659e3498-8e47-43e7-8200-d73feb280a96}">
+    <Declaration><![CDATA[(*
+
+## Short summary
+An interface to provide simple cycle management for steps in state machines.
+
+.. <legal notes>
+
+legal notes
+=================
+| SPDX-FileCopyrightText: © 2024 ekvip automation GmbH <info@ekvip.de>
+| SPDX-License-Identifier: Apache-2.0
+| For details check: Apache-2.0_
+
+.. _Apache-2.0: https://www.apache.org/licenses/LICENSE-2.0
+
+.. </legal notes>
+
+
+
+*)
+INTERFACE ISingleExecutionCycleManager 
+EXTENDS CNM_AbstractObject.IObject, 
+	CNM_AssertionInterfaces.IAssertor, 
+	ICycleError, 
+	ICycleSteps, 
+	ICycleManagerConfiguration
+]]></Declaration>
+    <Method Name="enter" Id="{5ccadb5b-e2f4-437d-b12c-819dc25b5e9b}">
+      <Declaration><![CDATA[(*
+
+## Short summary
+This method performs the given invoke only in the first cycle of the current step.
+
+### Purpose and usage
+This method provides step entry functionality for the cycle manager. It executes a single-attempt command
+only on the first cycle when entering a step, making it ideal for initialization operations, setting outputs,
+or triggering one-time actions at the beginning of a step.
+
+The method ensures the command is executed exactly once per step entry, regardless of how many cycles
+the step remains active.
+
+
+### Typical usage patterns
+1. **Step initialization**: Setting up conditions when entering a step
+2. **Output control**: Activating outputs or devices at step start
+3. **Data logging**: Recording step entry events
+4. **Communication**: Sending messages or signals on step entry
+
+### When to use
+- When you need one-time execution at the beginning of a step
+- For initializing variables or conditions when entering a step
+- When activating outputs that should remain active during the step
+- For triggering events that should only happen once per step entry
+
+### Behaviour details
+- Command is executed only in the first cycle of the current step
+- Subsequent cycles in the same step do not re-execute the command
+- If command fails, cycle manager proceeds to specified errorStep
+- If command succeeds, normal step progression continues
+
+### Parameter validation
+- invoke must be a valid ISingleAttempt command instance
+- errorStep should be a valid step number (typically negative for system steps)
+
+**Example:**
+```
+// Initialize outputs when entering step
+STEP_START_CONVEYOR:
+	cyclemanager.enter(activateConveyorCommand, CONVEYOR_ERROR_STEP);
+	cyclemanager.proceed();
+
+// Set variables on step entry
+STEP_PREPARE_OPERATION:
+	cyclemanager.enter(setOperationParametersCommand);
+	cyclemanager.waitFor(parameters_ready);
+
+// Trigger communication on step entry
+STEP_NOTIFY_MES:
+	cyclemanager.enter(sendMESUpdateCommand, COMMUNICATION_ERROR_STEP);
+	cyclemanager.proceed();
+
+// Complex step with multiple entry actions
+STEP_COMPLEX_INIT:
+	cyclemanager.enter(initializeSystemCommand);
+	IF cyclemanager.executeStep THEN
+		// Additional logic after first cycle
+		monitor_initialization_progress();
+	END_IF;
+	cyclemanager.waitFor(initialization_complete);
+
+```
+
+.. <legal notes>
+
+legal notes
+=================
+| SPDX-FileCopyrightText: © 2024 ekvip automation GmbH <info@ekvip.de>
+| SPDX-License-Identifier: Apache-2.0
+| For details check: Apache-2.0_
+
+.. _Apache-2.0: https://www.apache.org/licenses/LICENSE-2.0
+
+.. </legal notes>
+
+*)
+
+METHOD enter
+VAR_INPUT
+	(* command to execute *)
+	invoke :CNM_CommandInterfaces.ISingleAttempt;
+	(* step to proceed with in case of error *)
+	errorStep :DINT := CNM_ReturnTypes.DefaultSteps.STEP.ERROR;
+END_VAR
+]]></Declaration>
+    </Method>
+    <Property Name="errors" Id="{844a65ad-dd9e-4e76-b454-e06a58839042}">
+      <Declaration><![CDATA[(*
+
+## Short summary
+This property returns an ``ICycleError`` interface fluently to provide error handling methods.
+
+### Purpose and usage
+This property provides fluent access to the error handling interface of the cycle manager. It allows
+chaining error-related method calls and enables comprehensive error management functionality within
+the cycle management system.
+
+The property returns the same instance cast to ICycleError interface for method chaining.
+
+**return:** 
+ICycleError: Error handling interface providing acknowledge() and handle() methods
+
+### Typical usage patterns
+1. **Fluent error acknowledgment**: Chain method calls for cleaner code
+2. **Error handling**: Access error-specific methods and properties
+3. **Error state checking**: Check if current step was reached via error
+4. **Alarm integration**: Handle errors with alarm system integration
+
+### When to use
+- When you need to acknowledge errors in the cycle
+- For displaying alarms and waiting for operator response
+- When implementing error recovery logic
+- For fluent method chaining in error scenarios
+
+**Example:**
+```
+// Fluent error acknowledgment
+IF operator_ack_button THEN
+	cyclemanager.errors.acknowledge();
+END_IF;
+
+// Error handling with alarm
+IF critical_error_detected THEN
+	cyclemanager.errors.handle(critical_alarm, TRUE);
+END_IF;
+
+// Check error context
+IF cyclemanager.errors.isInErrorStep THEN
+	// Handle error-triggered step differently
+	enable_manual_mode := TRUE;
+ELSE
+	enable_manual_mode := FALSE;
+END_IF;
+
+// Fluent chaining (conceptual - methods don't return interfaces)
+// This demonstrates the fluent interface pattern
+error_interface := cyclemanager.errors;
+error_interface.acknowledge();
+```
+
+.. <legal notes>
+
+legal notes
+=================
+| SPDX-FileCopyrightText: © 2024 ekvip automation GmbH <info@ekvip.de>
+| SPDX-License-Identifier: Apache-2.0
+| For details check: Apache-2.0_
+
+.. _Apache-2.0: https://www.apache.org/licenses/LICENSE-2.0
+
+.. </legal notes>
+
+*)
+PROPERTY errors :ICycleError
+]]></Declaration>
+      <Get Name="Get" Id="{c68f6d22-7b55-4caa-8b37-c0cca46e3ffd}">
+        <Declaration><![CDATA[]]></Declaration>
+      </Get>
+    </Property>
+    <Method Name="evaluate" Id="{9f2c0ab8-a7de-4ba6-aef8-93e539974cba}">
+      <Declaration><![CDATA[(*
+
+## Short summary
+This method evaluates an execution state to calculate the next step.
+
+.. <legal notes>
+
+legal notes
+=================
+| SPDX-FileCopyrightText: © 2024 ekvip automation GmbH <info@ekvip.de>
+| SPDX-License-Identifier: Apache-2.0
+| For details check: Apache-2.0_
+
+.. _Apache-2.0: https://www.apache.org/licenses/LICENSE-2.0
+
+.. </legal notes>
+
+*)
+METHOD evaluate
+VAR_INPUT
+	(* the state which is to be evaluated *)
+	state :CNM_ReturnTypes.SingleExecutionState;
+	(* step to proceed with in case of error *)
+	errorStep :DINT := CNM_ReturnTypes.DefaultSteps.STEP.ERROR;
+END_VAR
+]]></Declaration>
+    </Method>
+    <Method Name="executeCommand" Id="{52e1cfc0-1f64-45ec-ad02-0522cfd96612}">
+      <Declaration><![CDATA[(*
+
+## Short summary
+This method performs the given command and evaluates the return value.
+The command will be called with execute := FALSE in the first cycle and with execute := TRUE in all following
+
+.. <legal notes>
+
+legal notes
+=================
+| SPDX-FileCopyrightText: © 2024 ekvip automation GmbH <info@ekvip.de>
+| SPDX-License-Identifier: Apache-2.0
+| For details check: Apache-2.0_
+
+.. _Apache-2.0: https://www.apache.org/licenses/LICENSE-2.0
+
+.. </legal notes>
+
+*)
+METHOD executeCommand
+VAR_INPUT
+	(* command to execute *)
+	command :CNM_CommandInterfaces.ICommand;
+	(* step to proceed with in case of error *)
+	errorStep :DINT := CNM_ReturnTypes.DefaultSteps.STEP.ERROR;
+END_VAR
+]]></Declaration>
+    </Method>
+    <Property Name="executeStep" Id="{78c91ffe-0ac6-42d3-8f49-2d076ce72f7d}">
+      <Declaration><![CDATA[(*
+
+## Short summary
+This property returns the execute flag for the current step, 
+which is FALSE in the first cycle of each step and TRUE after.
+
+.. <legal notes>
+
+legal notes
+=================
+| SPDX-FileCopyrightText: © 2024 ekvip automation GmbH <info@ekvip.de>
+| SPDX-License-Identifier: Apache-2.0
+| For details check: Apache-2.0_
+
+.. _Apache-2.0: https://www.apache.org/licenses/LICENSE-2.0
+
+.. </legal notes>
+
+*)
+PROPERTY executeStep :BOOL
+]]></Declaration>
+      <Get Name="Get" Id="{7ff5a06f-5bcb-48f8-9d87-51c58efdffc2}">
+        <Declaration><![CDATA[]]></Declaration>
+      </Get>
+    </Property>
+    <Method Name="leave" Id="{6d27c53f-8ffa-4aff-b66c-33383d1d557d}">
+      <Declaration><![CDATA[(*
+
+## Short summary
+This method performs the given invoke only in the last cycle of the current step.
+
+.. <legal notes>
+
+legal notes
+=================
+| SPDX-FileCopyrightText: © 2024 ekvip automation GmbH <info@ekvip.de>
+| SPDX-License-Identifier: Apache-2.0
+| For details check: Apache-2.0_
+
+.. _Apache-2.0: https://www.apache.org/licenses/LICENSE-2.0
+
+.. </legal notes>
+
+*)
+METHOD leave
+VAR_INPUT
+	(* command to execute *)
+	invoke :CNM_CommandInterfaces.ISingleAttempt;
+	(* step to proceed with in case of error *)
+	errorStep :DINT := CNM_ReturnTypes.DefaultSteps.STEP.ERROR;
+	(* whether the attempt should be called even if there was an error in the current step *)
+	forceOnError :BOOL := FALSE;
+END_VAR
+]]></Declaration>
+    </Method>
+    <Method Name="proceed" Id="{88dcb7d9-5967-4e2a-96e9-b4a68e35c204}">
+      <Declaration><![CDATA[(*
+
+## Short summary
+This method changes the current step in the cycle manager to the next in order (current + stepWidth) .
+If any evaluate or other call is still busy it will ignore them and change to the next step.
+
+.. <legal notes>
+
+legal notes
+=================
+| SPDX-FileCopyrightText: © 2024 ekvip automation GmbH <info@ekvip.de>
+| SPDX-License-Identifier: Apache-2.0
+| For details check: Apache-2.0_
+
+.. _Apache-2.0: https://www.apache.org/licenses/LICENSE-2.0
+
+.. </legal notes>
+
+*)
+METHOD proceed
+]]></Declaration>
+    </Method>
+    <Method Name="proceedWith" Id="{d10e79cd-2ac1-4908-809e-9a4430b8be69}">
+      <Declaration><![CDATA[(*
+
+## Short summary
+This method changes the current step in the cycle manager to the given step.
+If any evaluate or other call is still busy it will ignore them and move to the next step.
+
+.. <legal notes>
+
+legal notes
+=================
+| SPDX-FileCopyrightText: © 2024 ekvip automation GmbH <info@ekvip.de>
+| SPDX-License-Identifier: Apache-2.0
+| For details check: Apache-2.0_
+
+.. _Apache-2.0: https://www.apache.org/licenses/LICENSE-2.0
+
+.. </legal notes>
+
+*)
+METHOD proceedWith
+VAR_INPUT
+	(* step to move to *)
+	step :DINT;
+END_VAR
+]]></Declaration>
+    </Method>
+    <Property Name="state" Id="{c6f25606-45e5-47bc-8b97-eafeb36b68ae}">
+      <Declaration><![CDATA[(*
+
+## Short summary
+This property returns the current state of the cycle manager according to its step.
+
+.. <legal notes>
+
+legal notes
+=================
+| SPDX-FileCopyrightText: © 2024 ekvip automation GmbH <info@ekvip.de>
+| SPDX-License-Identifier: Apache-2.0
+| For details check: Apache-2.0_
+
+.. _Apache-2.0: https://www.apache.org/licenses/LICENSE-2.0
+
+.. </legal notes>
+
+*)
+PROPERTY state :CNM_ReturnTypes.SingleExecutionState
+]]></Declaration>
+      <Get Name="Get" Id="{92391fe6-d87f-406d-9e48-95dd0f2110df}">
+        <Declaration><![CDATA[]]></Declaration>
+      </Get>
+    </Property>
+    <Property Name="step" Id="{ebb2fbc9-2465-4d97-9c10-b2053cc7c609}">
+      <Declaration><![CDATA[(*
+
+## Short summary
+This property returns the current, next and last step of the cycle manager via fluent interface with the ``ICycleSteps`` interfaces
+
+.. <legal notes>
+
+legal notes
+=================
+| SPDX-FileCopyrightText: © 2024 ekvip automation GmbH <info@ekvip.de>
+| SPDX-License-Identifier: Apache-2.0
+| For details check: Apache-2.0_
+
+.. _Apache-2.0: https://www.apache.org/licenses/LICENSE-2.0
+
+.. </legal notes>
+
+*)
+PROPERTY step :ICycleSteps
+]]></Declaration>
+      <Get Name="Get" Id="{78d0acac-4d41-4790-b072-418621bdc3d5}">
+        <Declaration><![CDATA[]]></Declaration>
+      </Get>
+    </Property>
+    <Method Name="update" Id="{8a6cf1d1-4490-4c09-8550-b0f767b1ad9b}">
+      <Declaration><![CDATA[(*
+
+## Short summary
+This method updates the current state and current step of the cycle manager. 
+It needs to be called exactly once per PLC cycle per cycle manager instance.
+
+.. <legal notes>
+
+legal notes
+=================
+| SPDX-FileCopyrightText: © 2025 ekvip automation GmbH <info@ekvip.de>
+| SPDX-License-Identifier: Apache-2.0
+| For details check: Apache-2.0_
+
+.. _Apache-2.0: https://www.apache.org/licenses/LICENSE-2.0
+
+.. </legal notes>
+
+*)
+
+
+METHOD update
+VAR_INPUT
+	(*control bit to start or abort the cycle manager*)
+	execute :BOOL;
+	(*used for StopRequest evaluation if configured*)
+	stopRequest :BOOL := FALSE;
+	(*if true and Pausing Enabled and busy will proceed with PAUSE*)
+	pause :BOOL := FALSE;
+	(*if true, will acknowledge error and return to previous step*)
+	resume :BOOL := FALSE;
+	(* must be TRUE if stepping is enabled to proceed steps automatically *)
+	stepControl :BOOL := TRUE;
+END_VAR
+]]></Declaration>
+    </Method>
+    <Method Name="waitFor" Id="{5f86cc27-49e1-4935-aac4-2cdc556d87ce}">
+      <Declaration><![CDATA[(*
+
+## Short summary
+This method waits for a boolean signal until the step can be changed. 
+
+.. <legal notes>
+
+legal notes
+=================
+| SPDX-FileCopyrightText: © 2024 ekvip automation GmbH <info@ekvip.de>
+| SPDX-License-Identifier: Apache-2.0
+| For details check: Apache-2.0_
+
+.. _Apache-2.0: https://www.apache.org/licenses/LICENSE-2.0
+
+.. </legal notes>
+
+*)
+METHOD waitFor
+VAR_INPUT
+	(* the value to wait for *)
+	value :BOOL;
+END_VAR
+]]></Declaration>
+    </Method>
+  </Itf>
+</TcPlcObject>

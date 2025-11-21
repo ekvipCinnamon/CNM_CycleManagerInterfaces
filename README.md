@@ -1,95 +1,71 @@
-# ekvip Coding Ninjas Standard - cycle manager interface Library for TwinCAT Build 4026
+# CNM CycleManagerInterfaces lib
 
-<a name="toc"></a>
-## Table-Of-Contents
+## Overview
 
-1. [Table Of Contents](#toc)
-2. [Summary](#summary)
-3. [Folder Structure](#structure)
-4. [Branches](#branches)
-5. [Version Number Format](#versioform)
-6. [Contribution](#contribution)
-7. [Version Log](#version)
+This is a TwinCAT 3 library to provide interfaces and the API for Cycle Managing (sequence handling). 
 
-<a name="summary"></a>
-## Summary
+## Version Information
 
-* project description: This is a TwinCAT 3 library project for cycle management interfaces.
-* [gitlab project page](https://ekv-app-git-p01.ekvip.de/CNMTC3/cnm4026/cnm4026-cyclemanager-interface-lib)
+- **Version:** 0.1.1.0
+- **Release Date:** 2025
 
-<a name="structure"></a>
-## Folder-Structure
+## Documentation Location
 
-*   **.\\**
-*   **build\\** _contains the actual library files_
-*   **src\\** _root folder for all project sources_
-*   **test\\** _contains project sources for all test libraries_
-*   **.gitignore**  _the git ignore file for this project_
-*   **.gitattributes** _the git attribute file for the LFS support_
-*   **README.md** _the file you read right now_
+You will find the detailed library documentation at the [cinnamon docs](https://static.ekvip.de/docs/CNM_CycleManagerInterfaces/0.1.1.0/)
 
-<a name="branches"></a>
-## Branches
+## Purpose
 
-The repository has some branches to allow collaboration on a centralized repository, and give everybody the possibility to orient onself. We've two main branches, we use this two to branch from and merge to.
+A cycle manager interface defines a contract for starting, stopping, sequencing, and supervising cyclic tasks. It abstracts timing primitives, normalizes coordination, and isolates application logic from hardware-specific scheduling.
 
-> **The Main Branches Are:**
-> -   **master**  _here are  **only**  our well tested releases_
-> -   **develop**  _this is the choice for new features during the normal project work_
+## License
 
-### creating Branches
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
 
-The initial master commit contains the reworked readme.md, .gitignore and .gitattributes files.
-We **only** use the Jira project-tasks (only sub tasks) to create branches. You can choose between **feature** and **hotfix** branches in the Jira menu. To create a branch in Jira, choose the task you want to create a branch for and click on **"Create branch"** at the tab **"Development"** in the task view.
+    http://www.apache.org/licenses/LICENSE-2.0
 
-Here are two examples:  **feature/FRINST-14-analogvalueprocessing/efro**  (here is Elias Froschauer working on feature analogvalueprocessing in project FRINST) and  **_hotfix/FRINST-15-analogvalueprocessingbug/toel_**  (here is Tino working on a hotfix for the bug in analog value processing after production release). 
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
 
-### creating Tags
-Every time you finish a task and merge a branch back to the develop or master, then you have to fill out the version log here and you've to tag this commit with the prefix ***"version_"*** and the version number.
-If you work in a group and the current online version is not the latest master or develop commit, you will need to tag the currently used branch with **"online"**.
+## Copyright
 
-<a name="versionform"></a>
-## Version-Number-Format
+© 2025 ekvip automation GmbH
 
-The version number format for this project has following pattern: ***{major release}.{minor release}.{development state}{maintenance}***. Before the software is deployed to the machine, the major number is zero, if the software is deployed and tested 1st time the major number increase to one.
+**Contact Information:**
+- Email: cinnamon@ekvip.com
+- Website: www.ekvip.com
 
-## Version-Number-Format
+## Usage
 
-The version number format for this project has following pattern: ***{major release}.{minor release}.{development state}{maintenance}***. Before the software is deployed to the machine, the major number is zero, if the software is deployed and tested 1st time the major number increase to one.
+1. Install the library using the TwinCat library repositiory
+2. add the library as reference to your PLC project
+3. Follow the guidelines for your TwinCAT 3 development projects
 
-> **Version Number Format Description:**
+## Contributing
 
-> -   **major release**  _marks api changes_
-> -   **minor release**  _marks functional extensions or changes but api is still compatible_
-> -   **build**  _**odd** number is beta state,  **even**  is stable release
-> -   **revision**  _shows the number of patches and hotfixes_
+For questions, feedback, or contributions, please contact:
+- Email: cinnamon@ekvip.com
 
-Some examples:
+## Changelog
 
--   **0.0.0.0**  _initial commit_
--   **0.3.0.7**  _add some features and some bug fixes, software is still in alpha state_
--   **0.3.2.9**  _two more bug fixes and the software is now in release state_
--   **1.0.4.15**  _the api has been changed, this needs changes in the used software as well_
+### Version 0.1.1.0
+*	Build with TwinCAT version 4026.19
+*	Used TwinCAT libraies:
+	*	Tc2_Standard 3.4.*
+*   Used CNM libraries:
+    *   CNM_ReturnTypes 1.*
+	*	CNM_AbstractObject 1.*
+	*	CNM_AssertionInterfaces 0.1.*
+	*	CNM_CommandInterfaces 0.1.*
+	*	CNM_MessageInterfaces 0.1.*
+*	library namespace is *CNM_CycleManagerInterfaces*
+*	library placeholder is *CNM_CycleManagerInterfaces*
+*	libaray category is ekvip|base|utilities
 
-<a name="contribution"></a>
-## Contribution
+---
 
--   The language of software and software comments is **English** and software documentation is **English**
--   Use **branch** and **tag** **rules** as defined earlier
--   If you extend or change the folder structure, then you have to **update this file**
--   You have to provide a **version description** with a small change log for every version tag within this file in the version log section
--   If you want to merge you software to the master branch, then you have to take care that your software is compiling  **without warnings and errors**.
--   If you edit this file you've to do it in **English** and to use the **markdown** format
--	It is **not** allowed to work in one of the main branches directly
--	It is **only** allowed to work in your own branches (with your ekvip name acronym)
--	Every commit to feature or hotfix branch needs to contain the **Jira task id** before the commit description
-
-<a name="version"></a>
-## Version-Log
-
-### Versions 
-
-1.	[0.0.0.0](#0.0.0.0)
-
-### 0.0.0.0 
-_initial commit_
+**Disclaimer:** This documentation is provided "as is" without warranty of any kind. Users are responsible for ensuring compliance with their specific development requirements and standards.

@@ -1,0 +1,44 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1">
+  <DUT Name="StepStopRequestMode" Id="{d72e9327-bb3f-411a-af36-b3e8da56b403}">
+    <Declaration><![CDATA[(*
+
+## Short summary
+``StepStopRequestMode`` is an enumeration to control StopRequest behaviour in cycle managers.
+Cycle managers should continue with SUCCESS after a stop request is acknowledged by the cycle manager.
+
+.. <legal notes>
+
+legal notes
+=================
+| SPDX-FileCopyrightText: © 2024 ekvip automation GmbH <info@ekvip.de>
+| SPDX-License-Identifier: Apache-2.0
+| For details check: Apache-2.0_
+
+.. _Apache-2.0: https://www.apache.org/licenses/LICENSE-2.0
+
+.. </legal notes>
+
+enumeration values
+======================
+
+*)
+
+{attribute 'qualified_only'}
+{attribute 'strict'}
+{attribute 'to_string'}
+TYPE StepStopRequestMode :
+(
+	(*ignore stop request*)
+	IGNORE := 0,
+	(*proceed with stop request after step finishes and would proceed*)
+	AFTER_SUCCESSFUL_STEP := 1,
+	(*proceed with stop request only if the step is still busy*)
+	ON_BUSY := 2,
+	(*immediately proceed with stop request*)
+	IMMEDIATE := 3
+)DINT;
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

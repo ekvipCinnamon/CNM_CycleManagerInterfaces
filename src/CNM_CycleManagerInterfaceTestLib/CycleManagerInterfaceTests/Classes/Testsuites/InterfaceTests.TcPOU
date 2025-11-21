@@ -1,0 +1,3940 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1">
+  <POU Name="InterfaceTests" Id="{3bea2955-06fa-4ed1-baaa-d2be70c1833d}" SpecialFunc="None">
+    <Declaration><![CDATA[(*
+
+short summary
+=================
+Comprehensive test suite for the CNM CycleManagerInterfaces library.
+Tests all interfaces including ISingleExecutionCycleManager, ICycleError, ICycleSteps, and ICycleManagerConfiguration.
+Uses SimpleCycleManager as the injectable concrete implementation for interface testing.
+
+.. <legal notes>
+
+legal notes
+=================
+| SPDX-FileCopyrightText: © 2025 ekvip automation GmbH <info@ekvip.de>
+| SPDX-License-Identifier: Apache-2.0
+| For details check: Apache-2.0_
+
+.. _Apache-2.0: https://www.apache.org/licenses/LICENSE-2.0
+
+.. </legal notes>
+
+methods and properties
+=========================
+
+*)
+FUNCTION_BLOCK InterfaceTests EXTENDS FB_TestSuite
+VAR
+	cycleManager : CNM_CycleManagerInterfaces.ISingleExecutionCycleManager;
+	testCommand : TestCommand;
+	testSingleAttempt : TestSingleAttempt;
+	testAlarm : TestAlarm;
+	
+	// Test state variables
+	testStep : DINT;
+	testCounter : INT;
+	testFlag : BOOL;
+	testTimeout : TIME := T#100MS;
+	
+	// Test suite abort logic
+	anyTestFailed : BOOL;
+	testSuiteAborted : BOOL;
+	
+	// Interface references for testing
+	iCycleManager : CNM_CycleManagerInterfaces.ISingleExecutionCycleManager;
+	iCycleError : CNM_CycleManagerInterfaces.ICycleError;
+	iCycleSteps : CNM_CycleManagerInterfaces.ICycleSteps;
+	iConfiguration : CNM_CycleManagerInterfaces.ICycleManagerConfiguration;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[// Test execution
+THIS^.testInterfaceNullSafety();
+THIS^.testExecuteStepProperty();
+THIS^.testBasicStepNavigation();
+THIS^.testEnterMethod();
+THIS^.testLeaveMethod();
+THIS^.testExecuteCommandMethod();
+THIS^.testEvaluateMethod();
+THIS^.testWaitForMethod();
+THIS^.testProceedMethods();
+THIS^.testErrorHandleMethod();
+THIS^.testErrorAcknowledgeMethod();
+THIS^.testStepWidthConfig();
+THIS^.testErrorStepConfig();
+THIS^.testSuccessRequiredConfig();
+THIS^.testStepProperties();
+THIS^.testStateProperty();
+THIS^.testTimeoutBehavior();
+THIS^.testPauseResumeBehavior();
+THIS^.testSteppingWithStepControl();
+THIS^.testStopRequestModes();
+THIS^.testPauseErrorIntegration();
+THIS^.testFluentInterfaceChaining();
+THIS^.testStepPauseOverride();
+THIS^.testStepSteppingOverride();
+THIS^.testStepStopRequestOverride();
+THIS^.testMultipleStepConfigurations();
+THIS^.testStepConfigurationReset();
+]]></ST>
+    </Implementation>
+    <Folder Name="internal" Id="{1480186d-90a3-4194-b6c9-d81544f9a9b9}" />
+    <Method Name="abortTestsuite" Id="{e3775ff2-ae77-4610-9d91-9f08d63aa5ee}" FolderPath="internal\">
+      <Declaration><![CDATA[METHOD INTERNAL abortTestsuite
+VAR_INPUT
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[THIS^.anyTestFailed := TRUE;
+THIS^.testSuiteAborted := TRUE;
+AssertTrue(
+	Condition := FALSE,
+	Message := 'The execution of the testsuite is aborted to prevent further exceptions'
+);
+TEST_FINISHED();]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="FB_init" Id="{37f4df8a-d3cf-4fc0-8df8-3135f90255b2}" FolderPath="internal\">
+      <Declaration><![CDATA[(*
+
+short summary
+=================
+Initializes the test suite with an injected cycle manager instance.
+Enables dependency injection for testing interfaces without creating concrete instances.
+
+.. <legal notes>
+
+legal notes
+=================
+| SPDX-FileCopyrightText: © 2025 ekvip automation GmbH <info@ekvip.de>
+| SPDX-License-Identifier: Apache-2.0
+| For details check: Apache-2.0_
+
+.. _Apache-2.0: https://www.apache.org/licenses/LICENSE-2.0
+
+.. </legal notes>
+
+parameters
+=================
+
+*)
+METHOD FB_init : BOOL
+VAR_INPUT
+	(* if TRUE, the retain variables are initialized (warm start / cold start)*)
+	bInitRetains	: BOOL;
+	(* if TRUE, the instance afterwards gets moved into the copy code (online change)*)
+	bInCopyCode	: BOOL;
+	(* cycle manager interface to test  *)
+	injectedCycleManager :CNM_CycleManagerInterfaces.ISingleExecutionCycleManager;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[THIS^.cycleManager := injectedCycleManager;
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="getTestNameFor" Id="{12345678-90ab-cdef-1234-567890abcdef}" FolderPath="internal\">
+      <Declaration><![CDATA[(*
+
+short summary
+=================
+Generates a fully qualified test name for TcUnit test ordering.
+Combines the test suite name with the individual test method name.
+
+.. <legal notes>
+
+legal notes
+=================
+| SPDX-FileCopyrightText: © 2025 ekvip automation GmbH <info@ekvip.de>
+| SPDX-License-Identifier: Apache-2.0
+| For details check: Apache-2.0_
+
+.. _Apache-2.0: https://www.apache.org/licenses/LICENSE-2.0
+
+.. </legal notes>
+
+parameters
+=================
+
+*)
+METHOD PRIVATE getTestNameFor : STRING
+VAR_INPUT
+	(* name of the test method *)
+	testName : STRING;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[getTestNameFor := CONCAT('InterfaceTests.', testName);
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="resetCycleManager" Id="{8b34567c-def0-1234-5678-901234567890}">
+      <Declaration><![CDATA[(*
+
+short summary
+=================
+Resets the cycle manager and all test data to ensure clean state between tests.
+This method should be called at the beginning of each test to prevent interference.
+
+.. <legal notes>
+
+legal notes
+=================
+| SPDX-FileCopyrightText: © 2025 ekvip automation GmbH <info@ekvip.de>
+| SPDX-License-Identifier: Apache-2.0
+| For details check: Apache-2.0_
+
+.. _Apache-2.0: https://www.apache.org/licenses/LICENSE-2.0
+
+.. </legal notes>
+
+*)
+METHOD PRIVATE resetCycleManager
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[// Stop cycle manager execution and ensure no pause or stop request
+THIS^.cycleManager.update(execute := FALSE, pause := FALSE, stopRequest := FALSE, resume := FALSE, stepControl := TRUE);
+
+// Reset test helper objects
+THIS^.testCommand.reset();
+THIS^.testSingleAttempt.reset();
+THIS^.testAlarm.reset();
+
+// Clear test state variables
+THIS^.testStep := 0;
+THIS^.testCounter := 0;
+THIS^.testFlag := FALSE;
+
+// Get configuration interface
+THIS^.iConfiguration := THIS^.cycleManager;
+
+// Reset sequence configuration to defaults
+THIS^.iConfiguration.configuration.sequence.stepWidth := 1; // Default step width
+THIS^.iConfiguration.configuration.sequence.errorStep := CNM_ReturnTypes.DefaultSteps.STEP.ERROR; // Default error step
+THIS^.iConfiguration.configuration.sequence.timeout := T#0S; // No timeout by default
+THIS^.iConfiguration.configuration.sequence.timeoutStep := CNM_ReturnTypes.DefaultSteps.STEP.ERROR; // Default timeout step
+THIS^.iConfiguration.configuration.sequence.requireSuccessStep := TRUE; // Default require success step
+THIS^.iConfiguration.configuration.sequence.pause.disable(); // Disable pause
+THIS^.iConfiguration.configuration.sequence.stepping.disable(); // Disable stepping
+THIS^.iConfiguration.configuration.sequence.stopRequest.afterSuccessfulStep(); // Default stop request mode
+
+// Reset step configuration to defaults
+THIS^.iConfiguration.configuration.step.stepWidth := 1; 
+THIS^.iConfiguration.configuration.step.errorStep := CNM_ReturnTypes.DefaultSteps.STEP.ERROR; // Default error step
+THIS^.iConfiguration.configuration.step.timeout := T#0S; // 0 means use sequence timeout
+THIS^.iConfiguration.configuration.step.timeoutStep := CNM_ReturnTypes.DefaultSteps.STEP.ERROR; // Default error step
+THIS^.iConfiguration.configuration.step.pause.disable(); // Disable step-specific pause
+THIS^.iConfiguration.configuration.step.stepping.disable(); // Disable step-specific stepping
+THIS^.iConfiguration.configuration.step.stopRequest.afterSuccessfulStep(); // Default stop request mode
+
+// Clear and reassign interface references
+THIS^.iCycleManager := THIS^.cycleManager;
+THIS^.iCycleError := THIS^.cycleManager;
+THIS^.iCycleSteps := THIS^.cycleManager;
+THIS^.iConfiguration := THIS^.cycleManager;
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="testBasicStepNavigation" Id="{a1b2c3d4-e5f6-7890-abcd-ef1234567890}">
+      <Declaration><![CDATA[(*
+
+short summary
+=================
+Tests basic step navigation functionality of the cycle manager.
+Verifies that the step.current, step.next, and step.last properties work correctly.
+
+.. <legal notes>
+
+legal notes
+=================
+| SPDX-FileCopyrightText: © 2025 ekvip automation GmbH <info@ekvip.de>
+| SPDX-License-Identifier: Apache-2.0
+| For details check: Apache-2.0_
+
+.. _Apache-2.0: https://www.apache.org/licenses/LICENSE-2.0
+
+.. </legal notes>
+
+*)
+METHOD PRIVATE testBasicStepNavigation
+VAR_INST
+	testState : INT;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[RETURN( THIS^.testSuiteAborted OR_ELSE  NOT TcUnit.TEST_ORDERED(THIS^.getTestNameFor('testBasicStepNavigation')));
+
+CASE testState OF
+0: // Initialize
+	THIS^.resetCycleManager();
+	iCycleManager := cycleManager;
+	testState := 10;
+	
+10: // Start cycle manager
+	cycleManager.update(execute := TRUE);
+	AssertEquals_DINT(
+		Expected := CNM_ReturnTypes.DefaultSteps.STEP.INIT,
+		Actual := iCycleManager.step.current,
+		Message := 'Should start at INIT step'
+	);
+	testState := 20;
+	
+20: // Test step navigation
+	iCycleManager.step.next := 100;
+	iCycleManager.proceed();
+	// it should stay in INIT step until the update is called
+	AssertEquals_DINT(
+		Expected := CNM_ReturnTypes.DefaultSteps.STEP.INIT,
+		Actual := iCycleManager.step.current,
+		Message := 'Should stay in INIT until update call'
+	);
+	cycleManager.update(execute := TRUE);
+	
+	AssertEquals_DINT(
+		Expected := 100,
+		Actual := iCycleManager.step.current,
+		Message := 'Should move to step 100'
+	);
+	
+	AssertEquals_DINT(
+		Expected := CNM_ReturnTypes.DefaultSteps.STEP.INIT,
+		Actual := iCycleManager.step.last,
+		Message := 'Last step should be INIT'
+	);
+	
+	testState := 30;
+	
+30: // Cleanup
+	cycleManager.update(execute := FALSE);
+	testState := 0;
+	TEST_FINISHED();
+END_CASE
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="testEnterMethod" Id="{b2c3d4e5-f6a7-8901-bcde-f23456789012}">
+      <Declaration><![CDATA[(*
+
+short summary
+=================
+Tests the enter() method behavior.
+Verifies that the invoke parameter is executed only on the first cycle of a step.
+
+.. <legal notes>
+
+legal notes
+=================
+| SPDX-FileCopyrightText: © 2025 ekvip automation GmbH <info@ekvip.de>
+| SPDX-License-Identifier: Apache-2.0
+| For details check: Apache-2.0_
+
+.. _Apache-2.0: https://www.apache.org/licenses/LICENSE-2.0
+
+.. </legal notes>
+
+*)
+METHOD PRIVATE testEnterMethod
+VAR_INST
+	testState : INT;
+	enterExecuted : BOOL;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[RETURN( THIS^.testSuiteAborted OR_ELSE  NOT TcUnit.TEST_ORDERED(THIS^.getTestNameFor('testEnterMethod')));
+
+CASE testState OF
+0: // Initialize
+	THIS^.resetCycleManager();
+	iCycleManager := cycleManager;
+	testSingleAttempt.reset();
+	enterExecuted := FALSE;
+	testState := 10;
+	
+10: // Start and move to test step
+	cycleManager.update(execute := TRUE);
+	iCycleManager.proceedWith(10);
+	testState := 20;
+	THIS^.testSingleAttempt.ReturnResult := CNM_ReturnTypes.SingleExecutionResult.SUCCESS;
+	
+20: // Test enter - should execute only on first cycle
+	cycleManager.update(execute := TRUE);
+	
+	CASE iCycleManager.step.current OF
+	10:
+		// First cycle of step - enter should execute
+		iCycleManager.enter(invoke := testSingleAttempt, errorStep := 999);
+		
+		IF NOT iCycleManager.executeStep THEN
+			AssertTrue(
+				Condition := testSingleAttempt.wasInvoked,
+				Message := 'Enter should execute on first cycle'
+			);
+			enterExecuted := TRUE;
+		END_IF
+		
+		// Subsequent cycles - enter should not execute again
+		IF iCycleManager.executeStep AND enterExecuted THEN
+			testSingleAttempt.reset();
+			iCycleManager.enter(invoke := testSingleAttempt, errorStep := 999);
+			AssertFalse(
+				Condition := testSingleAttempt.wasInvoked,
+				Message := 'Enter should not execute after first cycle'
+			);
+			cycleManager.proceedWith(20);
+			testState := 30;
+		END_IF
+	END_CASE
+
+30: // test with result ABORTED
+	cycleManager.update(execute := TRUE);
+	THIS^.testSingleAttempt.reset();
+	THIS^.testSingleAttempt.ReturnResult := CNM_ReturnTypes.SingleExecutionResult.ABORTED;
+	iCycleManager.enter(THIS^.testSingleAttempt, errorStep := 999);
+	testState := 40;
+
+40: // verify error
+	cycleManager.update(execute := TRUE);
+	AssertTrue(
+		Condition := iCycleManager.errors.isInErrorStep,
+		Message := 'Should be in error step when enter returns ABORTED'
+	);
+	AssertEquals_DINT(
+		Expected := 999,
+		Actual := iCycleManager.step.current,
+		Message := 'Should be in error step 999 when enter returns ABORTED'
+	);
+	cycleManager.update(execute := FALSE);
+	cycleManager.update(execute := TRUE);
+	cycleManager.proceedWith(30);
+	THIS^.testSingleAttempt.reset();
+	testState := 50;
+	
+50:// test with result ERROR
+	cycleManager.update(execute := TRUE);
+	THIS^.testSingleAttempt.ReturnResult := CNM_ReturnTypes.SingleExecutionResult.ERROR;
+	iCycleManager.enter(THIS^.testSingleAttempt, errorStep := 999);
+	testState := 60;
+	
+60:	// verify error
+	cycleManager.update(execute := TRUE);
+	AssertTrue(
+		Condition := iCycleManager.errors.isInErrorStep,
+		Message := 'Should be in error step when enter returns ERROR'
+	);
+	AssertEquals_DINT(
+		Expected := 999,
+		Actual := iCycleManager.step.current,
+		Message := 'Should be in error step 999 when enter returns ERROR'
+	);
+	testState := 70;
+	
+70: // Cleanup
+	cycleManager.update(execute := FALSE);
+	testState := 0;
+	THIS^.testSingleAttempt.reset();
+	TEST_FINISHED();
+END_CASE
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="testErrorAcknowledgeMethod" Id="{74956b43-0611-4c90-8a90-ca45cc66f60a}">
+      <Declaration><![CDATA[(*
+
+short summary
+=================
+Tests error handling functionality through the ICycleError interface.
+Verifies error step navigation, alarm handling, and acknowledge behavior.
+
+.. <legal notes>
+
+legal notes
+=================
+| SPDX-FileCopyrightText: © 2025 ekvip automation GmbH <info@ekvip.de>
+| SPDX-License-Identifier: Apache-2.0
+| For details check: Apache-2.0_
+
+.. _Apache-2.0: https://www.apache.org/licenses/LICENSE-2.0
+
+.. </legal notes>
+
+*)
+METHOD PRIVATE testErrorAcknowledgeMethod
+VAR_INST
+	testState : INT;
+	cycleCount :UINT := 0;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[RETURN( THIS^.testSuiteAborted OR_ELSE  NOT TcUnit.TEST_ORDERED(THIS^.getTestNameFor('testErrorAcknowledgeMethod')));
+
+CASE testState OF
+0: // Initialize
+	THIS^.resetCycleManager();
+	iCycleManager := cycleManager;
+	iCycleError := iCycleManager.errors;
+	testState := 10;
+	
+10: // Create error condition
+	cycleManager.update(execute := TRUE);
+	iCycleManager.proceedWith(10);
+	cycleManager.update(execute := TRUE);
+	testState := 20;
+	
+20: // Trigger error
+	cycleManager.update(execute := TRUE);
+	// Evaluate error to move to error step
+	iCycleManager.evaluate(
+		state := CNM_ReturnTypes.SingleExecutionState.ERROR,
+		errorStep := 100
+	);
+	
+	cycleCount := cycleCount + 1;
+	IF cycleCount >=2 THEN
+		testState :=  30;
+		cycleCount := 0;
+		AssertEquals_DINT(
+			Expected := 100,
+			Actual := iCycleManager.step.current,
+			Message := 'Should proceed to Error step 100 in second cycle'
+		);
+	ELSE
+		AssertEquals_DINT(
+			Expected := 10,
+			Actual := iCycleManager.step.current,
+			Message := 'Should not proceed whithin first cycle'
+		);
+	END_IF
+	
+30: // Test error handling
+	cycleManager.update(execute := TRUE);
+	cycleCount := cycleCount + 1;
+ 	// Error step
+	AssertTrue(
+		Condition := iCycleError.isInErrorStep,
+		Message := 'Should be in error step'
+	);
+	AssertEquals_DINT(
+		Expected := 100,
+		Actual := iCycleManager.step.current,
+		Message := 'Should stay in error step 100 until update call '
+	);	
+	iCycleError.acknowledge();
+	cycleManager.update(execute := TRUE);
+	
+	AssertEquals_DINT(
+		Expected := 100,
+		Actual := iCycleManager.step.last,
+		Message := 'Last step should be error step 100'
+	);
+	AssertEquals_DINT(
+		Expected := 10,
+		Actual := iCycleManager.step.current,
+		Message := 'Should resume with last step 10'
+	);
+	AssertFalse(
+		Condition := iCycleError.isInErrorStep,
+		Message := 'Should not be in error step'
+	);
+	
+	TEST_FINISHED();
+END_CASE
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="testErrorHandleMethod" Id="{b8901234-5678-90ab-cdef-901234567890}">
+      <Declaration><![CDATA[(*
+
+short summary
+=================
+Tests error handling functionality through the ICycleError interface.
+Verifies error step navigation, alarm handling, and acknowledge behavior.
+
+.. <legal notes>
+
+legal notes
+=================
+| SPDX-FileCopyrightText: © 2025 ekvip automation GmbH <info@ekvip.de>
+| SPDX-License-Identifier: Apache-2.0
+| For details check: Apache-2.0_
+
+.. _Apache-2.0: https://www.apache.org/licenses/LICENSE-2.0
+
+.. </legal notes>
+
+*)
+METHOD PRIVATE testErrorHandleMethod
+VAR_INST
+	testState : INT;
+	cycleCount :UINT := 0;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[RETURN( THIS^.testSuiteAborted OR_ELSE  NOT TcUnit.TEST_ORDERED(THIS^.getTestNameFor('testErrorHandleMethod')));
+
+CASE testState OF
+0: // Initialize
+	THIS^.resetCycleManager();
+	iCycleManager := cycleManager;
+	iCycleError := iCycleManager.errors;
+	testAlarm.reset();
+	testState := 10;
+	
+10: // Create error condition
+	cycleManager.update(execute := TRUE);
+	iCycleManager.proceedWith(10);
+	cycleManager.update(execute := TRUE);
+	testState := 20;
+	
+20: // Trigger error
+	cycleManager.update(execute := TRUE);
+	// Evaluate error to move to error step
+	iCycleManager.evaluate(
+		state := CNM_ReturnTypes.SingleExecutionState.ERROR,
+		errorStep := 100
+	);
+	
+	cycleCount := cycleCount + 1;
+	IF cycleCount >=2 THEN
+		testState :=  30;
+		cycleCount := 0;
+		AssertEquals_DINT(
+			Expected := 100,
+			Actual := iCycleManager.step.current,
+			Message := 'Should proceed to Error step 100 in second cycle'
+		);
+	ELSE
+		AssertEquals_DINT(
+			Expected := 10,
+			Actual := iCycleManager.step.current,
+			Message := 'Should not proceed whithin first cycle'
+		);
+	END_IF
+	
+30: // Test error handling
+	cycleCount := cycleCount + 1;
+ 	// Error step
+	AssertTrue(
+		Condition := iCycleError.isInErrorStep,
+		Message := 'Should be in error step'
+	);
+	
+	// Test handle method
+	iCycleError.handle(alarm := testAlarm, resumeWithLastStep := TRUE);
+	AssertTrue(
+		Condition := testAlarm.wasThrown,
+		Message := 'Testalarm should be thrown by cycleManager'
+	);
+	cycleManager.update(execute := TRUE);
+	testAlarm.wasThrown := FALSE;
+	cycleManager.update(execute := TRUE);
+	// Test handle method - should not throw it again!
+	iCycleError.handle(alarm := testAlarm, resumeWithLastStep := TRUE);
+	AssertFALSE(
+		Condition := testAlarm.wasThrown,
+		Message := 'Testalarm should not be thrown by cycleManager multiple times'
+	);
+	cycleManager.update(execute := TRUE);
+	testAlarm.acknowledge();
+	// Test handle method - alarm is acknowledged
+	iCycleError.handle(alarm := testAlarm, resumeWithLastStep := TRUE);
+	AssertEquals_DINT(
+		Expected := 100,
+		Actual := iCycleManager.step.current,
+		Message := 'Should stay in error step 100 until update call '
+	);
+	cycleManager.update(execute := TRUE);
+	AssertEquals_DINT(
+		Expected := 100,
+		Actual := iCycleManager.step.last,
+		Message := 'Last step should be error step 100'
+	);
+	AssertEquals_DINT(
+		Expected := 10,
+		Actual := iCycleManager.step.current,
+		Message := 'Should resume with last step 10'
+	);
+	AssertFalse(
+		Condition := iCycleError.isInErrorStep,
+		Message := 'Should not be in error step'
+	);
+	
+	TEST_FINISHED();
+END_CASE
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="testErrorStepConfig" Id="{23b0dca8-3dd9-4282-b3aa-d5cc6ee2ece5}">
+      <Declaration><![CDATA[(*
+
+short summary
+=================
+Tests the fluent configuration API through ICycleManagerConfiguration.
+Verifies sequence and step-specific configuration capabilities.
+
+.. <legal notes>
+
+legal notes
+=================
+| SPDX-FileCopyrightText: © 2025 ekvip automation GmbH <info@ekvip.de>
+| SPDX-License-Identifier: Apache-2.0
+| For details check: Apache-2.0_
+
+.. _Apache-2.0: https://www.apache.org/licenses/LICENSE-2.0
+
+.. </legal notes>
+
+*)
+METHOD PRIVATE testErrorStepConfig
+VAR_INST
+	configScope : CNM_CycleManagerInterfaces.ICycleManagerConfigurationScope;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[RETURN( THIS^.testSuiteAborted OR_ELSE  NOT TcUnit.TEST_ORDERED(THIS^.getTestNameFor('testErrorStepConfig')));
+THIS^.resetCycleManager();
+configScope := THIS^.cycleManager.configuration;
+THIS^.cycleManager.update(execute := TRUE);
+AssertEquals_DINT(
+	Expected := CNM_ReturnTypes.DefaultSteps.STEP.INIT,
+	Actual := THIS^.cycleManager.step.current,
+	Message := 'step should be INIT step'
+);
+// set global stepWidth
+configScope.sequence.errorStep := 7;
+THIS^.cycleManager.update(execute := TRUE);
+THIS^.cycleManager.evaluate(CNM_ReturnTypes.SingleExecutionState.ERROR);
+THIS^.cycleManager.update(execute := TRUE);
+AssertEquals_DINT(
+	Expected := 7,
+	Actual := THIS^.cycleManager.step.current,
+	Message := 'step should be 7'
+);
+// test it twice to make it nice
+THIS^.cycleManager.proceedWith(10);
+THIS^.cycleManager.update(execute := TRUE);
+THIS^.cycleManager.update(execute := TRUE);
+THIS^.cycleManager.evaluate(CNM_ReturnTypes.SingleExecutionState.ERROR);
+THIS^.cycleManager.update(execute := TRUE);
+AssertEquals_DINT(
+	Expected := 7,
+	Actual := THIS^.cycleManager.step.current,
+	Message := 'step should be 7'
+);
+THIS^.cycleManager.proceedWith(10);
+THIS^.cycleManager.update(execute := TRUE);
+// test local error step config
+configScope.step.errorStep := 9;
+THIS^.cycleManager.update(execute := TRUE);
+THIS^.cycleManager.evaluate(CNM_ReturnTypes.SingleExecutionState.ERROR);
+THIS^.cycleManager.update(execute := TRUE);
+AssertEquals_DINT(
+	Expected := 9,
+	Actual := THIS^.cycleManager.step.current,
+	Message := 'step should be 9'
+);
+THIS^.cycleManager.proceedWith(10);
+THIS^.cycleManager.update(execute := TRUE);
+THIS^.cycleManager.update(execute := TRUE);
+// test global again
+THIS^.cycleManager.evaluate(CNM_ReturnTypes.SingleExecutionState.ERROR);
+THIS^.cycleManager.update(execute := TRUE);
+AssertEquals_DINT(
+	Expected := 7,
+	Actual := THIS^.cycleManager.step.current,
+	Message := 'step should be 7'
+);
+THIS^.cycleManager.proceedWith(10);
+THIS^.cycleManager.update(execute := TRUE);
+
+TcUnit.TEST_FINISHED();
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="testEvaluateMethod" Id="{e5f6a7b8-9012-3456-efab-678901234567}">
+      <Declaration><![CDATA[(*
+
+short summary
+=================
+Tests the evaluate() method behavior.
+Verifies state evaluation and error step transitions based on different execution states.
+
+.. <legal notes>
+
+legal notes
+=================
+| SPDX-FileCopyrightText: © 2025 ekvip automation GmbH <info@ekvip.de>
+| SPDX-License-Identifier: Apache-2.0
+| For details check: Apache-2.0_
+
+.. _Apache-2.0: https://www.apache.org/licenses/LICENSE-2.0
+
+.. </legal notes>
+
+*)
+METHOD PRIVATE testEvaluateMethod
+VAR_INST
+	testState : INT;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[RETURN( THIS^.testSuiteAborted OR_ELSE  NOT TcUnit.TEST_ORDERED(THIS^.getTestNameFor('testEvaluateMethod')));
+
+CASE testState OF
+0: // Initialize
+	THIS^.resetCycleManager();
+	iCycleManager := cycleManager;
+	testState := 10;
+	
+10: // Start and move to test step
+	cycleManager.update(execute := TRUE);
+	iCycleManager.proceedWith(10);
+	testState := 20;
+	
+20: // Test evaluate with different states
+	cycleManager.update(execute := TRUE);
+	
+	CASE iCycleManager.step.current OF
+	10:
+		IF iCycleManager.executeStep THEN
+			// Test SUCCESS evaluation
+			iCycleManager.evaluate(
+				state := CNM_ReturnTypes.SingleExecutionState.SUCCESS,
+				errorStep := 999
+			);
+			iCycleManager.proceed();
+			testState := 30;
+		END_IF
+	END_CASE
+	
+30: // Test ERROR evaluation
+	cycleManager.update(execute := TRUE);
+	iCycleManager.proceedWith(20);
+	testState := 40;
+	
+40: // Evaluate error
+	cycleManager.update(execute := TRUE);
+	
+	CASE iCycleManager.step.current OF
+	20:
+		IF iCycleManager.executeStep THEN
+			iCycleManager.evaluate(
+				state := CNM_ReturnTypes.SingleExecutionState.ERROR,
+				errorStep := 999
+			);
+			testState := 50;
+		END_IF
+	END_CASE
+	
+50: // Verify error step
+	cycleManager.update(execute := TRUE);
+	AssertEquals_DINT(
+		Expected := 999,
+		Actual := iCycleManager.step.current,
+		Message := 'Should move to error step after ERROR evaluation'
+	);
+	
+	cycleManager.update(execute := FALSE);
+	testState := 0;
+	TEST_FINISHED();
+END_CASE
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="testExecuteCommandMethod" Id="{d4e5f6a7-b890-1234-defa-567890123456}">
+      <Declaration><![CDATA[(*
+
+short summary
+=================
+Tests the executeCommand() method behavior.
+Verifies that commands are called with execute FALSE on first cycle and TRUE on subsequent cycles.
+
+.. <legal notes>
+
+legal notes
+=================
+| SPDX-FileCopyrightText: © 2025 ekvip automation GmbH <info@ekvip.de>
+| SPDX-License-Identifier: Apache-2.0
+| For details check: Apache-2.0_
+
+.. _Apache-2.0: https://www.apache.org/licenses/LICENSE-2.0
+
+.. </legal notes>
+
+*)
+METHOD PRIVATE testExecuteCommandMethod
+VAR_INST
+	testState : INT;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[RETURN( THIS^.testSuiteAborted OR_ELSE  NOT TcUnit.TEST_ORDERED(THIS^.getTestNameFor('testExecuteCommandMethod')));
+
+CASE testState OF
+0: // Initialize
+	THIS^.resetCycleManager();
+	iCycleManager := cycleManager;
+	testCommand.reset();
+	testState := 10;
+	
+10: // Start and move to test step
+	cycleManager.update(execute := TRUE);
+	iCycleManager.proceedWith(10);
+	testState := 20;
+	
+20: // Test executeCommand
+	cycleManager.update(execute := TRUE);
+	
+	CASE iCycleManager.step.current OF
+	10:
+		iCycleManager.executeCommand(command := testCommand, errorStep := 999);
+		
+		AssertTrue(
+			Condition := testCommand.executeWasCalled,
+			Message := 'command.executeCommand should be called every cycle'
+		);
+		IF NOT iCycleManager.executeStep THEN
+			AssertFalse(
+				Condition := testCommand.executeValue,
+				Message := 'Command execute should be FALSE on first cycle'
+			);
+		ELSE
+			AssertTrue(
+				Condition := testCommand.executeValue,
+				Message := 'Command execute should be TRUE after first cycle'
+			);
+			
+			// Test command returning success
+			testCommand.returnState := CNM_ReturnTypes.SingleExecutionState.SUCCESS;
+			testState := 30;
+		END_IF
+	END_CASE
+	
+30: // Verify state after success
+	cycleManager.step.next := CNM_ReturnTypes.DefaultSteps.STEP.SUCCESS;
+	cycleManager.update(execute := TRUE);
+	iCycleManager.executeCommand(command := testCommand, errorStep := 999);
+	cycleManager.update(execute := TRUE);
+	AssertEquals_INT(
+		Expected := CNM_ReturnTypes.SingleExecutionState.SUCCESS,
+		Actual := iCycleManager.state,
+		Message := 'State should be SUCCESS after command success'
+	);
+	cycleManager.update(execute := FALSE);
+	testState := 0;
+	TEST_FINISHED();
+END_CASE
+
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="testExecuteStepProperty" Id="{5a123456-7890-bcde-2345-678901234567}">
+      <Declaration><![CDATA[(*
+
+short summary
+=================
+Tests the executeStep property behavior.
+Verifies that executeStep is FALSE on the first cycle of a step and TRUE on subsequent cycles.
+
+.. <legal notes>
+
+legal notes
+=================
+| SPDX-FileCopyrightText: © 2025 ekvip automation GmbH <info@ekvip.de>
+| SPDX-License-Identifier: Apache-2.0
+| For details check: Apache-2.0_
+
+.. _Apache-2.0: https://www.apache.org/licenses/LICENSE-2.0
+
+.. </legal notes>
+
+*)
+METHOD PRIVATE testExecuteStepProperty
+VAR_INST
+	testState : INT;
+	firstCycleExecuteStep : BOOL;
+	secondCycleExecuteStep : BOOL;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[RETURN( THIS^.testSuiteAborted OR_ELSE  NOT TcUnit.TEST_ORDERED(THIS^.getTestNameFor('testExecuteStepProperty')));
+
+CASE testState OF
+0: // Initialize
+	THIS^.resetCycleManager();
+	cycleManager.update(execute := FALSE);
+	iCycleManager := cycleManager;
+	testState := 10;
+	
+10: // Test initial state
+	cycleManager.update(execute := TRUE);
+	// In IDLE state, executeStep should be FALSE initially
+	AssertFalse(
+		Condition := iCycleManager.executeStep,
+		Message := 'executeStep should be FALSE in first cycle of INIT'
+	);
+	testState := 20;
+	
+20: // Test second cycle of same step
+	cycleManager.update(execute := TRUE);
+	AssertTrue(
+		Condition := iCycleManager.executeStep,
+		Message := 'executeStep should be TRUE in second cycle of INIT'
+	);
+	// Move to INIT step
+	iCycleManager.proceed();
+	testState := 50;
+	
+50: // Test after normal proceed
+	cycleManager.update(execute := TRUE);
+	AssertFalse(
+		Condition := iCycleManager.executeStep,
+		Message := 'executeStep should be FALSE after proceed()'
+	);
+	// Jump to specific step
+	iCycleManager.proceedWith(100);
+	testState := 60;
+	
+60: // Test after proceedWith
+	cycleManager.update(execute := TRUE);
+	AssertFalse(
+		Condition := iCycleManager.executeStep,
+		Message := 'executeStep should be FALSE after proceedWith()'
+	);
+	testState := 70;
+	
+70: // Test multiple cycles
+	cycleManager.update(execute := TRUE);
+	AssertTrue(
+		Condition := iCycleManager.executeStep,
+		Message := 'executeStep should be TRUE in subsequent cycle'
+	);
+	// Test error transition
+	iCycleManager.evaluate(
+		state := CNM_ReturnTypes.SingleExecutionState.ERROR,
+		errorStep := 999
+	);
+	testState := 80;
+	
+80: // Verify error step transition
+	cycleManager.update(execute := TRUE);
+	AssertEquals_DINT(
+		Expected := 999,
+		Actual := iCycleManager.step.current,
+		Message := 'Should be in error step'
+	);
+	AssertFalse(
+		Condition := iCycleManager.executeStep,
+		Message := 'executeStep should be FALSE in first cycle of error step'
+	);
+	testState := 90;
+	
+90: // Test error acknowledge and return
+	cycleManager.update(execute := TRUE);
+	AssertTrue(
+		Condition := iCycleManager.executeStep,
+		Message := 'executeStep should be TRUE in subsequent cycle of error step'
+	);
+	iCycleError.acknowledge();
+	testState := 100;
+	
+100: // Verify return from error
+	cycleManager.update(execute := TRUE);
+	AssertEquals_DINT(
+		Expected := 100,
+		Actual := iCycleManager.step.current,
+		Message := 'Should return to previous step'
+	);
+	AssertFalse(
+		Condition := iCycleManager.executeStep,
+		Message := 'executeStep should be FALSE after returning from error'
+	);
+	// Test transition to SUCCESS
+	iCycleManager.proceedWith(CNM_ReturnTypes.DefaultSteps.STEP.SUCCESS);
+	testState := 110;
+	
+110: // Test SUCCESS step
+	cycleManager.update(execute := TRUE);
+	AssertFalse(
+		Condition := iCycleManager.executeStep,
+		Message := 'executeStep should be FALSE in first cycle of SUCCESS'
+	);
+	cycleManager.update(execute := TRUE);
+	Asserttrue(
+		Condition := iCycleManager.executeStep,
+		Message := 'executeStep should be TRUE in second cycle of SUCCESS'
+	);
+	testState := 120;
+	
+120: // Cleanup
+	cycleManager.update(execute := FALSE);
+	testState := 0;
+	TEST_FINISHED();
+END_CASE
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="testFluentInterfaceChaining" Id="{25678901-cdef-1234-5678-890123456121}">
+      <Declaration><![CDATA[(*
+
+short summary
+=================
+Tests complex fluent interface chaining.
+Verifies pause, stepping, and stop request configurations can be chained together.
+
+.. <legal notes>
+
+legal notes
+=================
+| SPDX-FileCopyrightText: © 2025 ekvip automation GmbH <info@ekvip.de>
+| SPDX-License-Identifier: Apache-2.0
+| For details check: Apache-2.0_
+
+.. _Apache-2.0: https://www.apache.org/licenses/LICENSE-2.0
+
+.. </legal notes>
+
+*)
+METHOD PRIVATE testFluentInterfaceChaining
+VAR_INST
+	testState : INT;
+	pauseConfig : CNM_CycleManagerInterfaces.IPauseConfiguration;
+	steppingConfig : CNM_CycleManagerInterfaces.ISteppingConfiguration;
+	stopConfig : CNM_CycleManagerInterfaces.IStopRequestConfiguration;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[RETURN( THIS^.testSuiteAborted OR_ELSE  NOT TcUnit.TEST_ORDERED(THIS^.getTestNameFor('testFluentInterfaceChaining')));
+
+CASE testState OF
+0: // Initialize
+	THIS^.resetCycleManager();
+	iConfiguration := cycleManager;
+	iCycleManager := cycleManager;
+	testState := 10;
+	
+10: // Test fluent chaining for configuration
+	cycleManager.update(execute := TRUE);
+	
+	// Test pause configuration chaining
+	pauseConfig := iConfiguration.configuration.sequence.pause;
+	pauseConfig.enable();
+	
+	AssertFalse(
+		Condition := pauseConfig = 0,
+		Message := 'Pause configuration should not be null'
+	);
+	
+	// Test stepping configuration chaining
+	steppingConfig := iConfiguration.configuration.sequence.stepping;
+	steppingConfig.enable();
+	
+	AssertFalse(
+		Condition := steppingConfig = 0,
+		Message := 'Stepping configuration should not be null'
+	);
+	
+	// Test stop request configuration chaining
+	stopConfig := iConfiguration.configuration.sequence.stopRequest;
+	stopConfig.immediate();
+	
+	AssertFalse(
+		Condition := stopConfig = 0,
+		Message := 'Stop request configuration should not be null'
+	);
+	
+	// Test that configurations are applied
+	iCycleManager.proceedWith(10);
+	testState := 20;
+	
+20: // Verify configurations work
+	cycleManager.update(execute := TRUE, pause := TRUE, stepControl := FALSE, stopRequest := TRUE);
+	
+	// With ALWAYS mode and stopRequest, should move to SUCCESS
+	IF iCycleManager.step.current = CNM_ReturnTypes.DefaultSteps.STEP.SUCCESS THEN
+		AssertTrue(
+			Condition := TRUE,
+			Message := 'Fluent configuration chain worked correctly'
+		);
+		testState := 30;
+	END_IF
+	
+30: // Cleanup
+	cycleManager.update(execute := FALSE);
+	testState := 0;
+	TEST_FINISHED();
+END_CASE
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="testInterfaceNullSafety" Id="{36789012-bcde-0123-4567-890123456232}">
+      <Declaration><![CDATA[(*
+
+short summary
+=================
+Tests null safety of all fluent interface access points.
+Verifies that all interface properties and methods return valid interface references to prevent runtime exceptions.
+Uses TRY-CATCH blocks to safely test each interface access point.
+
+.. <legal notes>
+
+legal notes
+=================
+| SPDX-FileCopyrightText: © 2025 ekvip automation GmbH <info@ekvip.de>
+| SPDX-License-Identifier: Apache-2.0
+| For details check: Apache-2.0_
+
+.. _Apache-2.0: https://www.apache.org/licenses/LICENSE-2.0
+
+.. </legal notes>
+
+*)
+METHOD PRIVATE testInterfaceNullSafety
+VAR_INST
+	testState : INT;
+	
+	// Interface references to test
+	testCycleManager : CNM_CycleManagerInterfaces.ISingleExecutionCycleManager;
+	testCycleError : CNM_CycleManagerInterfaces.ICycleError;
+	testCycleSteps : CNM_CycleManagerInterfaces.ICycleSteps;
+	testConfiguration : CNM_CycleManagerInterfaces.ICycleManagerConfiguration;
+	testConfigScope : CNM_CycleManagerInterfaces.ICycleManagerConfigurationScope;
+	testSequenceConfig : CNM_CycleManagerInterfaces.ISequenceConfiguration;
+	testStepConfig : CNM_CycleManagerInterfaces.IStepConfiguration;
+	testPauseConfig : CNM_CycleManagerInterfaces.IPauseConfiguration;
+	testSteppingConfig : CNM_CycleManagerInterfaces.ISteppingConfiguration;
+	testStopConfig : CNM_CycleManagerInterfaces.IStopRequestConfiguration;
+	testErrorStep : DINT;
+	testTimeout : TIME;
+	testStepWidth : DINT;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[RETURN( THIS^.testSuiteAborted OR_ELSE  NOT TcUnit.TEST_ORDERED(THIS^.getTestNameFor('testInterfaceNullSafety')));
+
+CASE testState OF
+0: // Initialize
+	THIS^.resetCycleManager();
+	testState := 10;
+	
+10: // Test main interface cast
+	__TRY
+		testCycleManager := cycleManager;
+		AssertFalse(
+			Condition := testCycleManager = 0,
+			Message := 'ISingleExecutionCycleManager interface should not be null'
+		);
+	__CATCH
+		AssertTrue(
+			Condition := FALSE,
+			Message := 'Exception accessing ISingleExecutionCycleManager interface'
+		);
+		THIS^.abortTestsuite();
+		RETURN;
+	__ENDTRY
+	testState := 20;
+	
+20: // Test errors interface
+	__TRY
+		testCycleError := testCycleManager.errors;
+		AssertFalse(
+			Condition := testCycleError = 0,
+			Message := 'ICycleError interface should not be null'
+		);
+	__CATCH
+		AssertTrue(
+			Condition := FALSE,
+			Message := 'Exception accessing errors interface'
+		);
+		THIS^.abortTestsuite();
+		RETURN;
+	__ENDTRY
+	testState := 30;
+	
+30: // Test step interface
+	__TRY
+		testCycleSteps := testCycleManager.step;
+		AssertFalse(
+			Condition := testCycleSteps = 0,
+			Message := 'ICycleSteps interface should not be null'
+		);
+	__CATCH
+		AssertTrue(
+			Condition := FALSE,
+			Message := 'Exception accessing step interface'
+		);
+		THIS^.abortTestsuite();
+		RETURN;
+	__ENDTRY
+	testState := 40;
+	
+40: // Test configuration interface cast
+	__TRY
+		testConfiguration := cycleManager;
+		AssertFalse(
+			Condition := testConfiguration = 0,
+			Message := 'ICycleManagerConfiguration interface should not be null'
+		);
+	__CATCH
+		AssertTrue(
+			Condition := FALSE,
+			Message := 'Exception accessing ICycleManagerConfiguration interface'
+		);
+		THIS^.abortTestsuite();
+		RETURN;
+	__ENDTRY
+	testState := 50;
+	
+50: // Test configuration scope
+	__TRY
+		testConfigScope := testConfiguration.configuration;
+		AssertFalse(
+			Condition := testConfigScope = 0,
+			Message := 'ICycleManagerConfigurationScope should not be null'
+		);
+	__CATCH
+		AssertTrue(
+			Condition := FALSE,
+			Message := 'Exception accessing configuration scope'
+		);
+		THIS^.abortTestsuite();
+		RETURN;
+	__ENDTRY
+	testState := 60;
+	
+60: // Test sequence configuration
+	__TRY
+		testSequenceConfig := testConfigScope.sequence;
+		AssertFalse(
+			Condition := testSequenceConfig = 0,
+			Message := 'ISequenceConfiguration should not be null'
+		);
+	__CATCH
+		AssertTrue(
+			Condition := FALSE,
+			Message := 'Exception accessing sequence configuration'
+		);
+		THIS^.abortTestsuite();
+		RETURN;
+	__ENDTRY
+	testState := 70;
+	
+70: // Test step configuration
+	__TRY
+		testStepConfig := testConfigScope.step;
+		AssertFalse(
+			Condition := testStepConfig = 0,
+			Message := 'IStepConfiguration should not be null'
+		);
+	__CATCH
+		AssertTrue(
+			Condition := FALSE,
+			Message := 'Exception accessing step configuration'
+		);
+		THIS^.abortTestsuite();
+		RETURN;
+	__ENDTRY
+	testState := 80;
+	
+80: // Test pause configuration
+	__TRY
+		testPauseConfig := testSequenceConfig.pause;
+		AssertFalse(
+			Condition := testPauseConfig = 0,
+			Message := 'IPauseConfiguration should not be null'
+		);
+	__CATCH
+		AssertTrue(
+			Condition := FALSE,
+			Message := 'Exception accessing pause configuration'
+		);
+		THIS^.abortTestsuite();
+		RETURN;
+	__ENDTRY
+	testState := 90;
+	
+90: // Test stepping configuration
+	__TRY
+		testSteppingConfig := testSequenceConfig.stepping;
+		AssertFalse(
+			Condition := testSteppingConfig = 0,
+			Message := 'ISteppingConfiguration should not be null'
+		);
+	__CATCH
+		AssertTrue(
+			Condition := FALSE,
+			Message := 'Exception accessing stepping configuration'
+		);
+		THIS^.abortTestsuite();
+		RETURN;
+	__ENDTRY
+	testState := 100;
+	
+100: // Test stop request configuration
+	__TRY
+		testStopConfig := testSequenceConfig.stopRequest;
+		AssertFalse(
+			Condition := testStopConfig = 0,
+			Message := 'IStopRequestConfiguration should not be null'
+		);
+	__CATCH
+		AssertTrue(
+			Condition := FALSE,
+			Message := 'Exception accessing stop request configuration'
+		);
+		THIS^.abortTestsuite();
+		RETURN;
+	__ENDTRY
+	testState := 110;
+	
+110: // Test configuration property access (read/write)
+	__TRY		
+		// Test write access
+		testSequenceConfig.errorStep := 999;
+		testSequenceConfig.timeout := T#1S;
+		testSequenceConfig.stepWidth := 5;
+		
+		AssertTrue(
+			Condition := TRUE,
+			Message := 'Configuration properties accessible without exception'
+		);
+	__CATCH
+		AssertTrue(
+			Condition := FALSE,
+			Message := 'Exception accessing configuration properties'
+		);
+		THIS^.abortTestsuite();
+		RETURN;
+	__ENDTRY
+	testState := 120;
+	
+120: // Test nested pause configuration access
+	__TRY
+		// Access pause config from step configuration
+		testPauseConfig := testStepConfig.pause;
+		AssertFalse(
+			Condition := testPauseConfig = 0,
+			Message := 'Step pause configuration should not be null'
+		);
+		
+		// Test pause enabled property
+		testPauseConfig.enable();
+	__CATCH
+		AssertTrue(
+			Condition := FALSE,
+			Message := 'Exception accessing nested pause configuration'
+		);
+		THIS^.abortTestsuite();
+		RETURN;
+	__ENDTRY
+	testState := 130;
+	
+130: // Test complete fluent chain
+	__TRY
+		// Test a complete fluent chain access
+		testConfiguration.configuration.sequence.pause.disable();
+		testConfiguration.configuration.sequence.stepping.disable();
+		testConfiguration.configuration.sequence.stopRequest.ignore();
+		
+		AssertTrue(
+			Condition := TRUE,
+			Message := 'Complete fluent chain accessible without exception'
+		);
+	__CATCH
+		AssertTrue(
+			Condition := FALSE,
+			Message := 'Exception in fluent chain access'
+		);
+		THIS^.abortTestsuite();
+		RETURN;
+	__ENDTRY
+	testState := 140;
+	
+140: // Cleanup
+	cycleManager.update(execute := FALSE);
+	testState := 0;
+	TEST_FINISHED();
+END_CASE
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="testLeaveMethod" Id="{c3d4e5f6-a7b8-9012-cdef-345678901234}">
+      <Declaration><![CDATA[(*
+
+short summary
+=================
+Tests the leave() method behavior.
+Verifies that the invoke parameter is executed only when leaving a step after success evaluation.
+
+.. <legal notes>
+
+legal notes
+=================
+| SPDX-FileCopyrightText: © 2025 ekvip automation GmbH <info@ekvip.de>
+| SPDX-License-Identifier: Apache-2.0
+| For details check: Apache-2.0_
+
+.. _Apache-2.0: https://www.apache.org/licenses/LICENSE-2.0
+
+.. </legal notes>
+
+*)
+METHOD PRIVATE testLeaveMethod
+VAR_INST
+	testState : INT;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[RETURN( THIS^.testSuiteAborted OR_ELSE  NOT TcUnit.TEST_ORDERED(THIS^.getTestNameFor('testLeaveMethod')));
+
+CASE testState OF
+0: // Initialize
+	THIS^.resetCycleManager();
+	iCycleManager := cycleManager;
+	testSingleAttempt.reset();
+	testState := 10;
+	
+10: // Start and move to test step
+	cycleManager.update(execute := TRUE);
+	iCycleManager.proceedWith(10);
+	testState := 20;
+	
+20: // Test leave method
+	cycleManager.update(execute := TRUE);
+	
+	CASE iCycleManager.step.current OF
+	10:
+		// Leave should not execute until success
+		iCycleManager.leave(invoke := testSingleAttempt, errorStep := 999);
+		
+		IF NOT iCycleManager.executeStep THEN
+			AssertFalse(
+				Condition := testSingleAttempt.wasInvoked,
+				Message := 'Leave should not execute on first cycle'
+			);
+		END_IF
+		
+		// Evaluate success then leave should execute
+		iCycleManager.evaluate(CNM_ReturnTypes.SingleExecutionState.SUCCESS);
+		iCycleManager.leave(invoke := testSingleAttempt, errorStep := 999);
+		
+		IF iCycleManager.executeStep THEN
+			AssertTrue(
+				Condition := testSingleAttempt.wasInvoked,
+				Message := 'Leave should execute after success evaluation'
+			);
+			iCycleManager.proceedWith(20);
+			testState := 30;
+		END_IF
+		
+	END_CASE
+	
+30: // test with result ABORTED
+	cycleManager.update(execute := TRUE);
+	THIS^.testSingleAttempt.reset();
+	THIS^.testSingleAttempt.ReturnResult := CNM_ReturnTypes.SingleExecutionResult.ABORTED;
+	IF iCycleManager.executeStep THEN
+		iCycleManager.evaluate(state := CNM_ReturnTypes.SingleExecutionState.SUCCESS);
+		iCycleManager.leave(THIS^.testSingleAttempt, errorStep := 999);
+		testState := 40;
+	END_IF
+
+40: // verify error
+	cycleManager.update(execute := TRUE);
+	AssertTrue(
+		Condition := iCycleManager.errors.isInErrorStep,
+		Message := 'Should be in error step when leave returns ABORTED'
+	);
+	AssertEquals_DINT(
+		Expected := 999,
+		Actual := iCycleManager.step.current,
+		Message := 'Should be in error step 999 when leave returns ABORTED'
+	);
+	cycleManager.update(execute := FALSE);
+	cycleManager.update(execute := TRUE);
+	cycleManager.proceedWith(30);
+	THIS^.testSingleAttempt.reset();
+	testState := 50;
+	
+50:// test with result ERROR
+	cycleManager.update(execute := TRUE);
+	THIS^.testSingleAttempt.ReturnResult := CNM_ReturnTypes.SingleExecutionResult.ERROR;
+	IF iCycleManager.executeStep THEN
+		iCycleManager.evaluate(state := CNM_ReturnTypes.SingleExecutionState.SUCCESS);
+		iCycleManager.leave(THIS^.testSingleAttempt, errorStep := 999);
+		testState := 60;
+	END_IF
+	
+60:	// verify error
+	cycleManager.update(execute := TRUE);
+	AssertTrue(
+		Condition := iCycleManager.errors.isInErrorStep,
+		Message := 'Should be in error step when leave returns ERROR'
+	);
+	AssertEquals_DINT(
+		Expected := 999,
+		Actual := iCycleManager.step.current,
+		Message := 'Should be in error step 999 when leave returns ERROR'
+	);
+	testState := 70;	
+
+70: // Cleanup
+	cycleManager.update(execute := FALSE);
+	testState := 0;
+	THIS^.testSingleAttempt.reset();
+	TEST_FINISHED();
+END_CASE
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="testMultipleStepConfigurations" Id="{45de67fa-89bc-0123-defa-456789012345}">
+      <Declaration><![CDATA[(*
+
+short summary
+=================
+Tests multiple different step configurations within the same sequence.
+Verifies that each step can have its own configuration that overrides the sequence defaults.
+
+.. <legal notes>
+
+legal notes
+=================
+| SPDX-FileCopyrightText: © 2025 ekvip automation GmbH <info@ekvip.de>
+| SPDX-License-Identifier: Apache-2.0
+| For details check: Apache-2.0_
+
+.. _Apache-2.0: https://www.apache.org/licenses/LICENSE-2.0
+
+.. </legal notes>
+
+*)
+METHOD PRIVATE testMultipleStepConfigurations
+VAR_INST
+	testState : INT;
+	timeoutTimer : TON;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[RETURN( THIS^.testSuiteAborted OR_ELSE  NOT TcUnit.TEST_ORDERED(THIS^.getTestNameFor('testMultipleStepConfigurations')));
+
+CASE testState OF
+0: // Initialize
+	THIS^.resetCycleManager();
+	iConfiguration := cycleManager;
+	iCycleManager := cycleManager;
+	testState := 10;
+	
+10: // Configure sequence defaults
+	// Set sequence defaults
+	iConfiguration.configuration.sequence.stepWidth := 1;
+	iConfiguration.configuration.sequence.errorStep := 999;
+	iConfiguration.configuration.sequence.timeout := T#200MS;
+	iConfiguration.configuration.sequence.timeoutStep := 999;
+	iConfiguration.configuration.sequence.pause.enable();
+	iConfiguration.configuration.sequence.stepping.disable();
+	iConfiguration.configuration.sequence.stopRequest.afterSuccessfulStep();
+	
+	// Start cycle manager
+	cycleManager.update(execute := TRUE);
+	iCycleManager.proceedWith(10);
+	testState := 20;
+	
+20: // Configure Step 10 with custom settings
+	cycleManager.update(execute := TRUE);
+	
+	// Step 10: Custom timeout, errorStep, stepWidth
+	iConfiguration.configuration.step.stepWidth := 5;
+	iConfiguration.configuration.step.errorStep := 100;
+	iConfiguration.configuration.step.timeout := T#50MS;
+	iConfiguration.configuration.step.timeoutStep := 100;
+	iConfiguration.configuration.step.pause.disable();
+	
+	// Test stepWidth override
+	iCycleManager.proceed();
+	cycleManager.update(execute := TRUE);
+	
+	AssertEquals_DINT(
+		Expected := 15, // 10 + 5 (step width)
+		Actual := iCycleManager.step.current,
+		Message := 'Step 10 should use custom stepWidth of 5'
+	);
+	
+	testState := 30;
+	
+30: // Configure Step 15 with different custom settings
+	// Step 15: Different custom settings
+	iConfiguration.configuration.step.stepWidth := 10;
+	iConfiguration.configuration.step.errorStep := 200;
+	iConfiguration.configuration.step.timeout := T#75MS;
+	iConfiguration.configuration.step.timeoutStep := 200;
+	iConfiguration.configuration.step.stepping.disable();
+	iConfiguration.configuration.step.stopRequest.ignore();
+	
+	// Test different stepWidth
+	iCycleManager.proceed();
+	cycleManager.update(execute := TRUE);
+	
+	AssertEquals_DINT(
+		Expected := 25, // 15 + 10 (new step width)
+		Actual := iCycleManager.step.current,
+		Message := 'Step 15 should use custom stepWidth of 10'
+	);
+	
+	testState := 40;
+	
+40: // Move to Step 25 - should use sequence defaults
+	// Don't configure step-specific settings
+	// Should revert to sequence defaults
+	
+	iCycleManager.proceed();
+	cycleManager.update(execute := TRUE);
+	
+	AssertEquals_DINT(
+		Expected := 26, // 25 + 1 (sequence default step width)
+		Actual := iCycleManager.step.current,
+		Message := 'Step 25 should use sequence default stepWidth of 1'
+	);
+	
+	// Test pause (should work - sequence default)
+	cycleManager.update(execute := TRUE, pause := TRUE);
+	
+	AssertEquals_INT(
+		Expected := CNM_ReturnTypes.SingleExecutionState.PAUSED,
+		Actual := iCycleManager.state,
+		Message := 'Step 26 should use sequence pause setting (enabled)'
+	);
+	
+	testState := 50;
+	
+50: // Move to Step 30 with timeout test
+	cycleManager.update(execute := TRUE, pause := FALSE);
+	iCycleManager.proceedWith(30);
+	cycleManager.update(execute := TRUE);
+	
+	// Configure step 30 with very short timeout
+	iConfiguration.configuration.step.timeout := T#30MS;
+	iConfiguration.configuration.step.timeoutStep := 300;
+	
+	// Start timeout timer
+	timeoutTimer(IN := FALSE, PT := T#50MS);
+	testState := 60;
+	
+60: // Wait for step timeout
+	cycleManager.update(execute := TRUE);
+	timeoutTimer(IN := TRUE, PT := T#50MS);
+	IF timeoutTimer.Q THEN
+		AssertEquals_DINT(
+			Expected := 300,
+			Actual := iCycleManager.step.current,
+			Message := 'Step 30 should timeout to step 300'
+		);
+		testState := 70;
+	ELSIF iCycleManager.step.current = 300 THEN
+		// Timeout occurred correctly
+		testState := 70;
+	END_IF
+	
+70: // Cleanup
+	cycleManager.update(execute := FALSE);
+	timeoutTimer(IN := FALSE);
+	testState := 0;
+	TEST_FINISHED();
+END_CASE
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="testPauseErrorIntegration" Id="{789abcde-f012-3456-7890-abcdef012345}">
+      <Declaration><![CDATA[(*
+
+short summary
+=================
+Tests the integration between pause and error states.
+Verifies what happens when pause is activated in an error step and if acknowledge/handle work on resume.
+
+.. <legal notes>
+
+legal notes
+=================
+| SPDX-FileCopyrightText: © 2025 ekvip automation GmbH <info@ekvip.de>
+| SPDX-License-Identifier: Apache-2.0
+| For details check: Apache-2.0_
+
+.. _Apache-2.0: https://www.apache.org/licenses/LICENSE-2.0
+
+.. </legal notes>
+
+*)
+
+METHOD PRIVATE testPauseErrorIntegration
+VAR_INST
+	testState : INT;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[RETURN( THIS^.testSuiteAborted OR_ELSE  NOT TcUnit.TEST_ORDERED(THIS^.getTestNameFor('testPauseErrorIntegration')));
+
+CASE testState OF
+0: // Initialize
+	THIS^.resetCycleManager();
+	cycleManager.update(execute := FALSE);
+	iConfiguration := cycleManager;
+	iCycleManager := cycleManager;
+	iCycleError := cycleManager;
+	testState := 10;
+	
+10: // Enable pause and move to work step
+	cycleManager.update(execute := TRUE, pause := FALSE);
+	
+	// Enable pause for sequence
+	iConfiguration.configuration.sequence.pause.enable();
+	
+	iCycleManager.proceedWith(10);
+	testState := 20;
+	
+20: // Move to work step
+	cycleManager.update(execute := TRUE, pause := FALSE);
+	AssertEquals_DINT(
+		Expected := 10,
+		Actual := iCycleManager.step.current,
+		Message := 'Should be in work step 10'
+	);
+	testState := 30;
+	
+30: // Create error condition
+	cycleManager.update(execute := TRUE, pause := FALSE);
+	IF iCycleManager.executeStep THEN
+		iCycleManager.evaluate(
+			state := CNM_ReturnTypes.SingleExecutionState.ERROR,
+			errorStep := 999
+		);
+		testState := 40;
+	END_IF
+	
+40: // Now in error step
+	cycleManager.update(execute := TRUE, pause := FALSE);
+	AssertEquals_DINT(
+		Expected := 999,
+		Actual := iCycleManager.step.current,
+		Message := 'Should be in error step 999'
+	);
+	AssertTrue(
+		Condition := iCycleError.isInErrorStep,
+		Message := 'Should be marked as error step'
+	);
+	testState := 50;
+	
+50: // Activate pause while in error step
+	cycleManager.update(execute := TRUE, pause := TRUE);
+	
+	// Should transition to PAUSE state
+	AssertEquals_INT(
+		Expected := CNM_ReturnTypes.SingleExecutionState.PAUSED,
+		Actual := iCycleManager.state,
+		Message := 'State should be PAUSED'
+	);
+	
+	AssertEquals_DINT(
+		Expected := CNM_ReturnTypes.DefaultSteps.STEP.PAUSE,
+		Actual := iCycleManager.step.current,
+		Message := 'Should be in PAUSE step'
+	);
+	
+	AssertEquals_DINT(
+		Expected := 999,
+		Actual := iCycleManager.step.last,
+		Message := 'Last step should be error step 999'
+	);
+	
+	testState := 60;
+	
+60: // Resume from pause
+	cycleManager.update(execute := TRUE, pause := FALSE);
+	
+	// Should return to error step
+	AssertEquals_DINT(
+		Expected := 999,
+		Actual := iCycleManager.step.current,
+		Message := 'Should return to error step after resume'
+	);
+	
+	AssertTrue(
+		Condition := iCycleError.isInErrorStep,
+		Message := 'Should still be in error step after resume'
+	);
+	
+	AssertEquals_INT(
+		Expected := CNM_ReturnTypes.SingleExecutionState.BUSY,
+		Actual := iCycleManager.state,
+		Message := 'State should be BUSY after resume'
+	);
+	
+	AssertEquals_DINT(
+		Expected := 10,
+		Actual := iCycleManager.step.last,
+		Message := 'Last step should be 10 after resuming from pause'
+	);
+	
+	testState := 70;
+	
+70: // Acknowledge error
+	cycleManager.update(execute := TRUE, pause := FALSE);
+	iCycleError.acknowledge();
+	testState := 80;
+	
+80: // Verify error acknowledged
+	cycleManager.update(execute := TRUE, pause := FALSE);
+	
+	AssertEquals_DINT(
+		Expected := 10,
+		Actual := iCycleManager.step.current,
+		Message := 'Should return to work step after acknowledge'
+	);
+	
+	AssertFalse(
+		Condition := iCycleError.isInErrorStep,
+		Message := 'Should no longer be in error step'
+	);
+	
+	AssertEquals_DINT(
+		Expected := 999,
+		Actual := iCycleManager.step.last,
+		Message := 'Last step should return 999'
+	);
+	
+	// Test scenario 2: Error occurring after pause/resume
+	iCycleManager.proceedWith(20);
+	testState := 90;
+	
+90: // In new work step
+	cycleManager.update(execute := TRUE, pause := FALSE);
+	AssertEquals_DINT(
+		Expected := 20,
+		Actual := iCycleManager.step.current,
+		Message := 'Should be in work step 20'
+	);
+	
+	AssertEquals_DINT(
+		Expected := 10,
+		Actual := iCycleManager.step.last,
+		Message := 'last step should be work step 10'
+	);
+	// Activate pause
+	testState := 100;
+	
+100: // Pause in normal step
+	cycleManager.update(execute := TRUE, pause := TRUE);
+	
+	AssertEquals_DINT(
+		Expected := CNM_ReturnTypes.DefaultSteps.STEP.PAUSE,
+		Actual := iCycleManager.step.current,
+		Message := 'Should be in PAUSE step'
+	);
+	
+	AssertEquals_DINT(
+		Expected := 20,
+		Actual := iCycleManager.step.last,
+		Message := 'Last step should be work step 20'
+	);
+	
+	testState := 110;
+	
+110: // Resume from pause
+	cycleManager.update(execute := TRUE, pause := FALSE);
+	
+	AssertEquals_DINT(
+		Expected := 20,
+		Actual := iCycleManager.step.current,
+		Message := 'Should return to work step 20'
+	);
+	AssertEquals_DINT(
+		Expected := 10,
+		Actual := iCycleManager.step.last,
+		Message := 'last step should be work step 10'
+	);
+	testState := 120;
+	
+120: // Create error after resuming
+	cycleManager.update(execute := TRUE, pause := FALSE);
+	IF iCycleManager.executeStep THEN
+		iCycleManager.evaluate(
+			state := CNM_ReturnTypes.SingleExecutionState.ERROR,
+			errorStep := 888
+		);
+		testState := 130;
+	END_IF
+	
+130: // Verify error transition works after pause/resume
+	cycleManager.update(execute := TRUE, pause := FALSE);
+	
+	AssertEquals_DINT(
+		Expected := 888,
+		Actual := iCycleManager.step.current,
+		Message := 'Should transition to error step after pause/resume'
+	);
+	
+	AssertTrue(
+		Condition := iCycleError.isInErrorStep,
+		Message := 'Should be in error step'
+	);
+	
+	// Verify we can still handle the error with alarm
+	testAlarm.reset();
+	iCycleError.handle(alarm := testAlarm, resumeWithLastStep := TRUE);
+	
+	AssertTrue(
+		Condition := testAlarm.wasThrown,
+		Message := 'Alarm should be thrown'
+	);
+	
+	testState := 140;
+	
+140: // Acknowledge alarm and verify recovery
+	cycleManager.update(execute := TRUE, pause := FALSE);
+	testAlarm.acknowledge();
+	iCycleError.handle(alarm := testAlarm, resumeWithLastStep := TRUE);
+	cycleManager.update(execute := TRUE, pause := FALSE);
+	
+	AssertEquals_DINT(
+		Expected := 20,
+		Actual := iCycleManager.step.current,
+		Message := 'Should return to last step after error handling'
+	);
+	
+	// Move to success to complete test
+	iCycleManager.proceedWith(CNM_ReturnTypes.DefaultSteps.STEP.SUCCESS);
+	testState := 150;
+	
+150: // Cleanup
+	cycleManager.update(execute := TRUE, pause := FALSE);
+	
+	AssertEquals_DINT(
+		Expected := CNM_ReturnTypes.DefaultSteps.STEP.SUCCESS,
+		Actual := iCycleManager.step.current,
+		Message := 'Should reach SUCCESS step'
+	);
+	
+	cycleManager.update(execute := FALSE);
+	testState := 0;
+	TEST_FINISHED();
+END_CASE
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="testPauseResumeBehavior" Id="{03456789-abcd-f012-3456-6789012340ef}">
+      <Declaration><![CDATA[(*
+
+short summary
+=================
+Tests pause and resume functionality.
+Verifies the cycle manager can be paused and resumed with proper state transitions.
+
+.. <legal notes>
+
+legal notes
+=================
+| SPDX-FileCopyrightText: © 2025 ekvip automation GmbH <info@ekvip.de>
+| SPDX-License-Identifier: Apache-2.0
+| For details check: Apache-2.0_
+
+.. _Apache-2.0: https://www.apache.org/licenses/LICENSE-2.0
+
+.. </legal notes>
+
+*)
+METHOD PRIVATE testPauseResumeBehavior
+VAR_INST
+	testState : INT;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[RETURN( THIS^.testSuiteAborted OR_ELSE  NOT TcUnit.TEST_ORDERED(THIS^.getTestNameFor('testPauseResumeBehavior')));
+
+CASE testState OF
+0: // Initialize
+	THIS^.resetCycleManager();
+	iConfiguration := cycleManager;
+	iCycleManager := cycleManager;
+	testState := 10;
+	
+10: // Enable pause and move to test step
+	cycleManager.update(execute := TRUE, pause := FALSE);
+	
+	// Enable pause for sequence
+	iConfiguration.configuration.sequence.pause.enable();
+	
+	iCycleManager.proceedWith(10);
+	cycleManager.update(execute := TRUE, pause := FALSE);
+	testState := 20;
+
+20: // Apply pause
+	cycleManager.update(execute := TRUE, pause := TRUE);
+	
+	// Should be in PAUSED state
+	AssertEquals_INT(
+		Expected := CNM_ReturnTypes.SingleExecutionState.PAUSED,
+		Actual := iCycleManager.state,
+		Message := 'State should be PAUSED'
+	);
+	
+	AssertEquals_DINT(
+		Expected := CNM_ReturnTypes.DefaultSteps.STEP.PAUSE,
+		Actual := iCycleManager.step.current,
+		Message := 'Should be in PAUSE step'
+	);
+	AssertEquals_DINT(
+		Expected := 10,
+		Actual := iCycleManager.step.last,
+		Message := 'Last step should be 10'
+	);
+	
+	testState := 40;
+	
+40: // Resume from pause
+	cycleManager.update(execute := TRUE, pause := FALSE);
+	
+	// Should return to previous step
+	AssertEquals_DINT(
+		Expected := 10,
+		Actual := iCycleManager.step.current,
+		Message := 'Should return to previous step after resume'
+	);
+	
+	AssertEquals_INT(
+		Expected := CNM_ReturnTypes.SingleExecutionState.BUSY,
+		Actual := iCycleManager.state,
+		Message := 'State should be BUSY after resume'
+	);
+	
+	AssertEquals_DINT(
+		Expected := CNM_ReturnTypes.DefaultSteps.STEP.INIT,
+		Actual := iCycleManager.step.last,
+		Message := 'Last step should be INIT'
+	);
+	
+	cycleManager.update(execute := FALSE);
+	testState := 0;
+	TEST_FINISHED();
+END_CASE
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="testProceedMethods" Id="{a7b89012-3456-789a-bcde-890123456789}">
+      <Declaration><![CDATA[(*
+
+short summary
+=================
+Tests the proceed() and proceedWith() methods.
+Verifies step advancement by step width and direct step navigation.
+
+.. <legal notes>
+
+legal notes
+=================
+| SPDX-FileCopyrightText: © 2025 ekvip automation GmbH <info@ekvip.de>
+| SPDX-License-Identifier: Apache-2.0
+| For details check: Apache-2.0_
+
+.. _Apache-2.0: https://www.apache.org/licenses/LICENSE-2.0
+
+.. </legal notes>
+
+*)
+METHOD PRIVATE testProceedMethods
+VAR_INST
+	testState : INT;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[RETURN( THIS^.testSuiteAborted OR_ELSE  NOT TcUnit.TEST_ORDERED(THIS^.getTestNameFor('testProceedMethods')));
+
+// Initialize
+THIS^.resetCycleManager();
+iCycleManager := cycleManager;
+
+// Test proceed with default step width
+cycleManager.update(execute := TRUE);
+iCycleManager.proceedWith(10);
+cycleManager.update(execute := TRUE);
+AssertEquals_DINT(
+	Expected := 10,
+	Actual := iCycleManager.step.current,
+	Message := 'proceedWith() should move to step 10'
+);
+
+// Test proceed()
+cycleManager.update(execute := TRUE);
+iCycleManager.proceed();
+cycleManager.update(execute := TRUE);
+AssertEquals_DINT(
+	Expected := 11, // 10 + default step width (1)
+	Actual := iCycleManager.step.current,
+	Message := 'proceed() should advance by step width'
+);
+
+// Test proceed with default step width
+cycleManager.update(execute := TRUE);
+iCycleManager.proceedWith(10);
+cycleManager.update(execute := TRUE);
+AssertEquals_DINT(
+	Expected := 10,
+	Actual := iCycleManager.step.current,
+	Message := 'proceedWith() should move to step 10'
+);
+
+// Test proceedWith with waitFor
+iCycleManager.waitFor(FALSE);
+iCycleManager.proceedWith(20);
+cycleManager.update(execute := TRUE);
+
+AssertEquals_DINT(
+	Expected := 20, // 10 + default step width (1)
+	Actual := iCycleManager.step.current,
+	Message := 'proceedWith(20) should move to step 20 even with .waitFor(FALSE) '
+);
+
+// test proceed with waitFor
+iCycleManager.waitFor(FALSE);
+iCycleManager.proceed();
+cycleManager.update(execute := TRUE);
+
+AssertEquals_DINT(
+	Expected := 21, // 10 + default step width (1)
+	Actual := iCycleManager.step.current,
+	Message := 'proceed() should advance by step width even with .waitFor(FALSE) '
+);
+
+
+TEST_FINISHED();
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="testStateProperty" Id="{e1234567-89ab-def0-1234-456789012cde}">
+      <Declaration><![CDATA[(*
+
+short summary
+=================
+Tests the state property of ISingleExecutionCycleManager.
+Verifies all state transitions: IDLE, BUSY, SUCCESS, and ABORTED.
+
+.. <legal notes>
+
+legal notes
+=================
+| SPDX-FileCopyrightText: © 2025 ekvip automation GmbH <info@ekvip.de>
+| SPDX-License-Identifier: Apache-2.0
+| For details check: Apache-2.0_
+
+.. _Apache-2.0: https://www.apache.org/licenses/LICENSE-2.0
+
+.. </legal notes>
+
+*)
+METHOD PRIVATE testStateProperty
+VAR_INST
+	testState : INT;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[RETURN( THIS^.testSuiteAborted OR_ELSE  NOT TcUnit.TEST_ORDERED(THIS^.getTestNameFor('testStateProperty')));
+
+CASE testState OF
+0: // Initialize
+	THIS^.resetCycleManager();
+	iCycleManager := cycleManager;
+	testState := 10;
+	
+10: // Test BUSY state
+	cycleManager.update(execute := TRUE);
+	
+	AssertEquals_INT(
+		Expected := CNM_ReturnTypes.SingleExecutionState.BUSY,
+		Actual := iCycleManager.state,
+		Message := 'State should be BUSY when running'
+	);
+	
+	// Move to success step
+	iCycleManager.proceedWith(CNM_ReturnTypes.DefaultSteps.STEP.SUCCESS);
+	testState := 20;
+	
+20: // Test SUCCESS state
+	cycleManager.update(execute := TRUE);
+	
+	AssertEquals_INT(
+		Expected := CNM_ReturnTypes.SingleExecutionState.SUCCESS,
+		Actual := iCycleManager.state,
+		Message := 'State should be SUCCESS in success step'
+	);
+	
+	// Test ABORTED state
+	cycleManager.update(execute := FALSE); // Stop execution
+	testState := 30;
+	
+30: // Verify ABORTED state
+	AssertEquals_INT(
+		Expected := CNM_ReturnTypes.SingleExecutionState.SUCCESS,
+		Actual := iCycleManager.state,
+		Message := 'State should stay in SUCCESS after SUCCESS step was reached'
+	);
+	cycleManager.update(execute := TRUE);
+	cycleManager.update(execute := FALSE);
+	AssertEquals_INT(
+		Expected := CNM_ReturnTypes.SingleExecutionState.ABORTED,
+		Actual := iCycleManager.state,
+		Message := 'State should be ABORTED'
+	);
+	testState := 0;
+	TEST_FINISHED();
+END_CASE
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="testStepConfigurationReset" Id="{56ef78ab-90cd-1234-efab-567890123456}">
+      <Declaration><![CDATA[(*
+
+short summary
+=================
+Tests that step configuration is properly reset when moving between steps.
+Verifies that step configuration from one step doesn't leak into the next step.
+
+.. <legal notes>
+
+legal notes
+=================
+| SPDX-FileCopyrightText: © 2025 ekvip automation GmbH <info@ekvip.de>
+| SPDX-License-Identifier: Apache-2.0
+| For details check: Apache-2.0_
+
+.. _Apache-2.0: https://www.apache.org/licenses/LICENSE-2.0
+
+.. </legal notes>
+
+*)
+METHOD PRIVATE testStepConfigurationReset
+VAR_INST
+	testState : INT;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[RETURN( THIS^.testSuiteAborted OR_ELSE  NOT TcUnit.TEST_ORDERED(THIS^.getTestNameFor('testStepConfigurationReset')));
+
+CASE testState OF
+0: // Initialize
+	THIS^.resetCycleManager();
+	iConfiguration := cycleManager;
+	iCycleManager := cycleManager;
+	testState := 10;
+	
+10: // Configure sequence defaults
+	// Set known sequence defaults
+	iConfiguration.configuration.sequence.stepWidth := 2;
+	iConfiguration.configuration.sequence.errorStep := 999;
+	iConfiguration.configuration.sequence.pause.enable();
+	iConfiguration.configuration.sequence.stepping.disable();
+	iConfiguration.configuration.sequence.stopRequest.afterSuccessfulStep();
+	
+	// Start cycle manager
+	cycleManager.update(execute := TRUE);
+	iCycleManager.proceedWith(10);
+	testState := 20;
+	
+20: // Configure Step 10 with custom settings
+	cycleManager.update(execute := TRUE);
+	
+	// Step 10: Configure all possible overrides
+	iConfiguration.configuration.step.stepWidth := 7;
+	iConfiguration.configuration.step.errorStep := 100;
+	iConfiguration.configuration.step.timeout := T#25MS;
+	iConfiguration.configuration.step.timeoutStep := 100;
+	iConfiguration.configuration.step.pause.disable();
+	iConfiguration.configuration.step.stepping.disable();
+	iConfiguration.configuration.step.stopRequest.ignore();
+	
+	// Verify step 10 uses custom stepWidth
+	iCycleManager.proceed();
+	cycleManager.update(execute := TRUE);
+	
+	AssertEquals_DINT(
+		Expected := 17, // 10 + 7
+		Actual := iCycleManager.step.current,
+		Message := 'Step 10 should use custom stepWidth of 7'
+	);
+	
+	// Test pause is disabled for this step
+	cycleManager.update(execute := TRUE, pause := TRUE);
+	
+	AssertEquals_DINT(
+		Expected := CNM_ReturnTypes.DefaultSteps.STEP.PAUSE,
+		Actual := iCycleManager.step.current,
+		Message := 'Step 17 should have pause enabled by sequence config'
+	);
+	
+	testState := 30;
+	
+30: // Move to Step 20 WITHOUT configuring it
+	cycleManager.update(execute := TRUE, pause := FALSE);
+	iCycleManager.proceedWith(20);
+	cycleManager.update(execute := TRUE);
+	
+	// Do NOT configure step 20
+	// It should use sequence defaults, NOT step 10's configuration
+	
+	// Test stepWidth reverts to sequence default
+	iCycleManager.proceed();
+	cycleManager.update(execute := TRUE);
+	
+	AssertEquals_DINT(
+		Expected := 22, // 20 + 2 (sequence default, not 7)
+		Actual := iCycleManager.step.current,
+		Message := 'Step 20 should use sequence stepWidth of 2, not step 10 config'
+	);
+	
+	testState := 40;
+	
+40: // Test pause reverts to sequence default (enabled)
+	cycleManager.update(execute := TRUE, pause := TRUE);
+	
+	AssertEquals_INT(
+		Expected := CNM_ReturnTypes.SingleExecutionState.PAUSED,
+		Actual := iCycleManager.state,
+		Message := 'Step 22 should use sequence pause (enabled), not step 10 config'
+	);
+	
+	// Resume
+	cycleManager.update(execute := TRUE, pause := FALSE);
+	iCycleManager.proceedWith(30);
+	testState := 50;
+	
+50: // Test stepping reverts to sequence default
+	cycleManager.update(execute := TRUE);
+	
+	// Execute a successful command
+	testCommand.reset();
+	testCommand.returnState := CNM_ReturnTypes.SingleExecutionState.SUCCESS;
+	iCycleManager.executeCommand(testCommand);
+	
+	cycleManager.update(execute := TRUE, stepControl := FALSE);
+	
+	// Should still be at step 30 (sequence stepping enabled)
+	AssertEquals_DINT(
+		Expected := 30,
+		Actual := iCycleManager.step.current,
+		Message := 'Step 30 should use sequence stepping (enabled), not step 10 config'
+	);
+	
+	testState := 60;
+	
+60: // Test stopRequest reverts to sequence default
+	// Manually proceed since stepping is enabled
+	iCycleManager.proceed();
+	cycleManager.update(execute := TRUE);
+	cycleManager.update(execute := TRUE, stopRequest := TRUE);
+	// Execute successful command with stop request
+	testCommand.reset();
+	testCommand.returnState := CNM_ReturnTypes.SingleExecutionState.SUCCESS;
+	iCycleManager.executeCommand(testCommand);
+	
+	cycleManager.update(execute := TRUE, stopRequest := TRUE);
+	
+	// Should stop (sequence default is afterSuccess)
+	AssertEquals_DINT(
+		Expected := CNM_ReturnTypes.SingleExecutionState.SUCCESS,
+		Actual := iCycleManager.state,
+		Message := 'Should use sequence stopRequest (afterSuccess), not step 10 config (ignore)'
+	);
+	
+	testState := 70;
+	
+70: // Cleanup
+	cycleManager.update(execute := FALSE);
+	testState := 0;
+	TEST_FINISHED();
+END_CASE
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="testStepPauseOverride" Id="{12ab34cd-56ef-7890-abcd-ef1234567890}">
+      <Declaration><![CDATA[(*
+
+short summary
+=================
+Tests that step-level pause configuration overrides sequence-level pause configuration.
+Verifies that when step pause settings differ from sequence pause settings, the step settings take precedence.
+
+.. <legal notes>
+
+legal notes
+=================
+| SPDX-FileCopyrightText: © 2025 ekvip automation GmbH <info@ekvip.de>
+| SPDX-License-Identifier: Apache-2.0
+| For details check: Apache-2.0_
+
+.. _Apache-2.0: https://www.apache.org/licenses/LICENSE-2.0
+
+.. </legal notes>
+
+*)
+METHOD PRIVATE testStepPauseOverride
+VAR_INST
+	testState : INT;
+	cycleCount : INT;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[RETURN( THIS^.testSuiteAborted OR_ELSE  NOT TcUnit.TEST_ORDERED(THIS^.getTestNameFor('testStepPauseOverride')));
+
+CASE testState OF
+0: // Initialize
+	THIS^.resetCycleManager();
+	iConfiguration := cycleManager;
+	iCycleManager := cycleManager;
+	testState := 10;
+	
+10: // Scenario 1: Sequence pause disabled, step pause enabled
+	// Set sequence pause to disabled
+	iConfiguration.configuration.sequence.pause.disable();
+	
+	// Start cycle manager and move to test step
+	cycleManager.update(execute := TRUE);
+	iCycleManager.proceedWith(10);
+	testState := 20;
+	
+20: // Configure step-specific pause to enabled
+	cycleManager.update(execute := TRUE);
+	
+	// Enable pause for current step
+	iConfiguration.configuration.step.pause.enable();
+	
+	// Trigger pause
+	cycleManager.update(execute := TRUE, pause := TRUE);
+	testState := 30;
+	
+30: // Verify step pause overrides sequence (should be paused)
+	cycleManager.update(execute := TRUE, pause := TRUE);
+	
+	AssertEquals_INT(
+		Expected := CNM_ReturnTypes.SingleExecutionState.PAUSED,
+		Actual := iCycleManager.state,
+		Message := 'Step pause enabled should override sequence pause disabled'
+	);
+	
+	// Resume
+	cycleManager.update(execute := TRUE, pause := FALSE);
+	iCycleManager.proceedWith(20);
+	testState := 40;
+	
+40: // Scenario 2: Sequence pause enabled, step pause disabled
+	cycleManager.update(execute := TRUE);
+	
+	// Enable sequence pause
+	iConfiguration.configuration.sequence.pause.enable();
+	// Disable pause for current step
+	iConfiguration.configuration.step.pause.disable();
+	
+	// Try to pause
+	cycleManager.update(execute := TRUE, pause := TRUE);
+	testState := 50;
+	
+50: // Verify step pause overrides sequence (should NOT be paused)
+	cycleManager.update(execute := TRUE, pause := TRUE);
+	
+	AssertEquals_DINT(
+		Expected := 20,
+		Actual := iCycleManager.step.current,
+		Message := 'Step pause disabled should override sequence pause enabled'
+	);
+	
+	AssertEquals_INT(
+		Expected := CNM_ReturnTypes.SingleExecutionState.BUSY,
+		Actual := iCycleManager.state,
+		Message := 'Should remain busy when step.pause is disabled'
+	);
+	
+	cycleManager.update(execute := TRUE, pause := FALSE);
+	// Move to next step to verify sequence pause works again
+	iCycleManager.proceedWith(30);
+	cycleManager.update(execute := TRUE, pause := FALSE);
+	testState := 60;
+	
+60: // Verify sequence pause works when no step override exists
+	cycleManager.update(execute := TRUE, pause := TRUE);
+	
+	AssertEquals_INT(
+		Expected := CNM_ReturnTypes.SingleExecutionState.PAUSED,
+		Actual := iCycleManager.state,
+		Message := 'Sequence pause should work when no step override exists'
+	);
+	
+	testState := 70;
+	
+70: // Cleanup
+	cycleManager.update(execute := FALSE);
+	testState := 0;
+	TEST_FINISHED();
+END_CASE
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="testSteppingWithStepControl" Id="{67fa89bc-def0-3456-7890-bcdef1234567}">
+      <Declaration><![CDATA[(*
+
+short summary
+=================
+Tests the stepControl input behavior when stepping mode is enabled.
+Verifies that when stepping is enabled, the cycle manager waits for stepControl=TRUE before proceeding.
+Tests both sequence-level and step-level stepping configurations with stepControl.
+
+.. <legal notes>
+
+legal notes
+=================
+| SPDX-FileCopyrightText: © 2025 ekvip automation GmbH <info@ekvip.de>
+| SPDX-License-Identifier: Apache-2.0
+| For details check: Apache-2.0_
+
+.. _Apache-2.0: https://www.apache.org/licenses/LICENSE-2.0
+
+.. </legal notes>
+
+*)
+METHOD PRIVATE testSteppingWithStepControl
+VAR_INST
+	testState : INT;
+	cycleCount : INT;
+	simulatedStepControl : BOOL;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[RETURN( THIS^.testSuiteAborted OR_ELSE  NOT TcUnit.TEST_ORDERED(THIS^.getTestNameFor('testSteppingWithStepControl')));
+
+CASE testState OF
+0: // Initialize
+	THIS^.resetCycleManager();
+	iConfiguration := cycleManager;
+	iCycleManager := cycleManager;
+	simulatedStepControl := TRUE; // Default to TRUE for normal operation
+	testState := 10;
+	
+10: // Test 1: Stepping disabled - stepControl should be ignored
+	// Disable stepping - should proceed automatically regardless of stepControl
+	iConfiguration.configuration.sequence.stepping.disable();
+	
+	// Start cycle manager with stepControl = FALSE
+	cycleManager.update(execute := TRUE, stepControl := FALSE);
+	iCycleManager.proceedWith(10);
+	cycleManager.update(execute := TRUE, stepControl := FALSE);
+	testState := 20;
+	
+20: // Verify automatic progression even with stepControl = FALSE
+	cycleManager.update(execute := TRUE, stepControl := FALSE);
+	
+	// Execute a successful command
+	testCommand.reset();
+	testCommand.returnState := CNM_ReturnTypes.SingleExecutionState.SUCCESS;
+	iCycleManager.executeCommand(testCommand);
+	
+	cycleManager.update(execute := TRUE, stepControl := FALSE);
+	testState := 30;
+	
+30: // Should auto-proceed despite stepControl = FALSE (stepping disabled)
+	cycleManager.update(execute := TRUE, stepControl := FALSE);
+	
+	AssertEquals_DINT(
+		Expected := 11,
+		Actual := iCycleManager.step.current,
+		Message := 'Should auto-proceed when stepping disabled, ignoring stepControl=FALSE'
+	);
+	
+	// Reset for next test
+	iCycleManager.proceedWith(20);
+	cycleManager.update(execute := TRUE, stepControl := FALSE);
+	testState := 40;
+	
+40: // Test 2: Stepping enabled at sequence level - stepControl required
+	cycleManager.update(execute := TRUE, stepControl := FALSE);
+	
+	// Enable stepping at sequence level
+	iConfiguration.configuration.sequence.stepping.enable();
+	
+	// Execute a successful command
+	testCommand.reset();
+	testCommand.returnState := CNM_ReturnTypes.SingleExecutionState.SUCCESS;
+	iCycleManager.executeCommand(testCommand);
+	
+	// Call with stepControl = FALSE - should NOT proceed
+	cycleManager.update(execute := TRUE, stepControl := FALSE);
+	testState := 50;
+	
+50: // Verify stuck at current step with stepControl = FALSE
+	
+	cycleManager.update(execute := TRUE, stepControl := FALSE);
+	iCycleManager.executeCommand(testCommand);
+	AssertEquals_DINT(
+		Expected := 20,
+		Actual := iCycleManager.step.current,
+		Message := 'Should stay at step 20 when stepping enabled and stepControl=FALSE'
+	);
+	
+	// Now provide stepControl = TRUE
+	cycleManager.update(execute := TRUE, stepControl := TRUE);
+	testState := 60;
+	
+60: // Should proceed now with stepControl = TRUE
+	iCycleManager.executeCommand(testCommand);
+	cycleManager.update(execute := TRUE, stepControl := TRUE);
+	
+	AssertEquals_DINT(
+		Expected := 21,
+		Actual := iCycleManager.step.current,
+		Message := 'Should proceed from step 20 when stepControl=TRUE'
+	);
+	
+	// Move to step 30 for next test
+	iCycleManager.proceedWith(30);
+	cycleManager.update(execute := TRUE, stepControl := TRUE);
+	testState := 70;
+	
+70: // Test 3: Step-level stepping overrides sequence (enabled override)
+	cycleManager.update(execute := TRUE, stepControl := TRUE);
+	
+	// Disable stepping at sequence level
+	iConfiguration.configuration.sequence.stepping.disable();
+	// Enable stepping for current step
+	iConfiguration.configuration.step.stepping.enable();
+	
+	// Execute successful command
+	testCommand.reset();
+	testCommand.returnState := CNM_ReturnTypes.SingleExecutionState.SUCCESS;
+	iCycleManager.executeCommand(testCommand);
+	
+	// Should require stepControl despite sequence setting
+	cycleManager.update(execute := TRUE, stepControl := FALSE);
+	testState := 80;
+	
+80: // Verify step override requires stepControl
+	cycleManager.update(execute := TRUE, stepControl := FALSE);
+	
+	AssertEquals_DINT(
+		Expected := 30,
+		Actual := iCycleManager.step.current,
+		Message := 'Step-level stepping enabled should require stepControl=TRUE'
+	);
+	
+	// Provide stepControl = TRUE
+	cycleManager.update(execute := TRUE, stepControl := TRUE);
+	testState := 90;
+	
+90: // Should proceed with stepControl = TRUE
+	iCycleManager.executeCommand(testCommand);
+	cycleManager.update(execute := TRUE, stepControl := TRUE);
+	
+	AssertEquals_DINT(
+		Expected := 31,
+		Actual := iCycleManager.step.current,
+		Message := 'Should proceed when step stepping enabled and stepControl=TRUE'
+	);
+	
+	// Move to step 40 for next test
+	iCycleManager.proceedWith(40);
+	testState := 100;
+	
+100: // Test 4: Alternating stepControl (simulating button press/release)
+	cycleManager.update(execute := TRUE, stepControl := TRUE);
+	
+	// Enable stepping
+	iConfiguration.configuration.sequence.stepping.enable();
+	
+	// Execute command
+	testCommand.reset();
+	testCommand.returnState := CNM_ReturnTypes.SingleExecutionState.SUCCESS;
+	iCycleManager.executeCommand(testCommand);
+	
+	cycleCount := 0;
+	testState := 110;
+	
+110: // Simulate button press pattern: FALSE, FALSE, TRUE, FALSE
+	cycleManager.update(execute := TRUE, stepControl := FALSE);
+	cycleCount := cycleCount + 1;
+	iCycleManager.executeCommand(testCommand);
+	IF cycleCount < 3 THEN
+		// First 2 cycles: stepControl = FALSE, should not proceed
+		AssertEquals_DINT(
+			Expected := 40,
+			Actual := iCycleManager.step.current,
+			Message := 'Should wait at step 40 while stepControl=FALSE'
+		);
+	ELSIF cycleCount = 3 THEN
+		// Third cycle: stepControl = TRUE
+		cycleManager.update(execute := TRUE, stepControl := TRUE);
+		testState := 120;
+	END_IF
+	
+120: // Verify proceeded after stepControl pulse
+	cycleManager.update(execute := TRUE, stepControl := FALSE); // Back to FALSE
+	
+	AssertEquals_DINT(
+		Expected := 41,
+		Actual := iCycleManager.step.current,
+		Message := 'Should have proceeded after stepControl TRUE pulse'
+	);
+	
+	// Move to step 50 for timeout test
+	iCycleManager.proceedWith(50);
+	testState := 130;
+	
+130: // Test 5: Timeout behavior with stepping and stepControl
+	cycleManager.update(execute := TRUE, stepControl := TRUE);
+	
+	// Configure timeout
+	iConfiguration.configuration.sequence.timeout := T#50MS;
+	iConfiguration.configuration.sequence.timeoutStep := 999;
+	
+	// Enable stepping
+	iConfiguration.configuration.sequence.stepping.enable();
+	
+	cycleCount := 0;
+	testState := 140;
+	
+140: // Hold stepControl = FALSE to trigger timeout
+	cycleManager.update(execute := TRUE, stepControl := FALSE);
+	cycleCount := cycleCount + 1;
+	
+	// Check if timeout occurred (need several cycles for timeout)
+	IF iCycleManager.step.current = 999 THEN
+		AssertTrue(
+			Condition := iCycleManager.errors.isInErrorStep,
+			Message := 'Should timeout to error step when stepControl held FALSE'
+		);
+		testState := 150;
+	ELSIF cycleCount > 100 THEN // Safety exit if timeout doesn't occur
+		AssertTrue(
+			Condition := FALSE,
+			Message := 'Timeout should have occurred with stepControl=FALSE'
+		);
+		testState := 150;
+	END_IF
+	
+150: // Test 6: Edge case - stepControl changes during cycle
+	// Reset from timeout
+	cycleManager.update(execute := FALSE);
+	cycleManager.update(execute := TRUE);
+	iCycleManager.proceedWith(60);
+	testState := 160;
+	
+160: // Setup for edge case test
+	cycleManager.update(execute := TRUE, stepControl := TRUE);
+	
+	// Enable stepping
+	iConfiguration.configuration.sequence.stepping.enable();
+	
+	// Execute command
+	testCommand.reset();
+	testCommand.returnState := CNM_ReturnTypes.SingleExecutionState.SUCCESS;
+	iCycleManager.executeCommand(testCommand);
+	
+	// Start with FALSE
+	cycleManager.update(execute := TRUE, stepControl := FALSE);
+	testState := 170;
+	
+170: // Mid-cycle change from FALSE to TRUE
+	// This tests that stepControl is evaluated at the right time
+	iCycleManager.executeCommand(testCommand);
+	IF iCycleManager.executeStep THEN
+		// During executeStep, change to TRUE
+		cycleManager.update(execute := TRUE, stepControl := TRUE);
+		testState := 180;
+	ELSE
+		cycleManager.update(execute := TRUE, stepControl := FALSE);
+	END_IF
+	
+180: // Verify proper handling of mid-cycle change
+	cycleManager.update(execute := TRUE, stepControl := TRUE);
+	
+	// Should have proceeded as stepControl was TRUE when evaluated
+	AssertEquals_DINT(
+		Expected := 61,
+		Actual := iCycleManager.step.current,
+		Message := 'Should handle stepControl change during cycle correctly'
+	);
+	
+	testState := 190;
+	
+190: // Test 7: Default stepControl behavior (when not specified)
+	// Move to new step
+	iCycleManager.proceedWith(70);
+	cycleManager.update(execute := TRUE, stepControl := TRUE);
+	cycleManager.update(execute := TRUE); // No stepControl (default TRUE)
+	
+	// Enable stepping
+	iConfiguration.configuration.sequence.stepping.enable();
+	
+	// Execute command
+	testCommand.reset();
+	testCommand.returnState := CNM_ReturnTypes.SingleExecutionState.SUCCESS;
+	iCycleManager.executeCommand(testCommand);
+	
+	cycleManager.update(execute := TRUE); // No stepControl (default TRUE)
+	testState := 200;
+	
+200: // Should proceed with default stepControl = TRUE
+	cycleManager.update(execute := TRUE); // No stepControl (default TRUE)
+	
+	AssertEquals_DINT(
+		Expected := 71,
+		Actual := iCycleManager.step.current,
+		Message := 'Should proceed when stepControl not specified (default TRUE)'
+	);
+	
+	testState := 210;
+	
+210: // Cleanup
+	cycleManager.update(execute := FALSE);
+	testState := 0;
+	TEST_FINISHED();
+END_CASE
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="testStepProperties" Id="{d0123456-789b-cdef-0123-345678901bcd}">
+      <Declaration><![CDATA[(*
+
+short summary
+=================
+Tests the ICycleSteps interface properties.
+Verifies current, last, and next step properties work correctly.
+
+.. <legal notes>
+
+legal notes
+=================
+| SPDX-FileCopyrightText: © 2025 ekvip automation GmbH <info@ekvip.de>
+| SPDX-License-Identifier: Apache-2.0
+| For details check: Apache-2.0_
+
+.. _Apache-2.0: https://www.apache.org/licenses/LICENSE-2.0
+
+.. </legal notes>
+
+*)
+METHOD PRIVATE testStepProperties
+VAR_INST
+	testState : INT;
+	lastStep :DINT;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[RETURN( THIS^.testSuiteAborted OR_ELSE  NOT TcUnit.TEST_ORDERED(THIS^.getTestNameFor('testStepProperties')));
+
+CASE testState OF
+0: // Initialize
+	THIS^.resetCycleManager();
+	lastStep := cycleManager.step.current;
+	iCycleManager := cycleManager;
+	iCycleSteps := iCycleManager.step;
+	testState := 10;
+	
+10: // Test step properties
+	cycleManager.update(execute := TRUE);
+	
+	// Initial state
+	AssertEquals_DINT(
+		Expected := CNM_ReturnTypes.DefaultSteps.STEP.INIT,
+		Actual := iCycleSteps.current,
+		Message := 'Current should be INIT'
+	);
+	
+	AssertEquals_DINT(
+		Expected := lastStep,
+		Actual := iCycleSteps.last,
+		Message := 'Last should be step before reset'
+	);		
+	
+	AssertEquals_DINT(
+		Expected := CNM_ReturnTypes.DefaultSteps.STEP.INIT + 1,
+		Actual := iCycleSteps.next,
+		Message := 'next property should be current + 1 by default'	
+	);
+	
+	iCycleManager.configuration.step.stepWidth := 10;
+	
+	AssertEquals_DINT(
+		Expected := CNM_ReturnTypes.DefaultSteps.STEP.INIT + 10,
+		Actual := iCycleSteps.next,
+		Message := 'next property should be current + 10 after stepWidth configuration'	
+	);
+	
+	// Set next step
+	iCycleSteps.next := 100;
+	
+	AssertEquals_DINT(
+		Expected := 100,
+		Actual := iCycleSteps.next,
+		Message := 'next property should be 100 after setting it directly'	
+	);
+	
+	iCycleManager.proceed();
+	testState := 20;
+	
+20: // Verify step transition
+	cycleManager.update(execute := TRUE);
+	
+	AssertEquals_DINT(
+		Expected := 100,
+		Actual := iCycleSteps.current,
+		Message := 'Current should be 100'
+	);
+	
+	AssertEquals_DINT(
+		Expected := CNM_ReturnTypes.DefaultSteps.STEP.INIT,
+		Actual := iCycleSteps.last,
+		Message := 'Last should be INIT'
+	);
+	
+	cycleManager.update(execute := FALSE);
+	testState := 0;
+	TEST_FINISHED();
+END_CASE
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="testStepSteppingOverride" Id="{23bc45de-67fa-8901-bcde-f23456789012}">
+      <Declaration><![CDATA[(*
+
+short summary
+=================
+Tests that step-level stepping configuration overrides sequence-level stepping configuration.
+Verifies that when step stepping settings differ from sequence stepping settings, the step settings take precedence.
+
+.. <legal notes>
+
+legal notes
+=================
+| SPDX-FileCopyrightText: © 2025 ekvip automation GmbH <info@ekvip.de>
+| SPDX-License-Identifier: Apache-2.0
+| For details check: Apache-2.0_
+
+.. _Apache-2.0: https://www.apache.org/licenses/LICENSE-2.0
+
+.. </legal notes>
+
+*)
+METHOD PRIVATE testStepSteppingOverride
+VAR_INST
+	testState : INT;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[RETURN( THIS^.testSuiteAborted OR_ELSE  NOT TcUnit.TEST_ORDERED(THIS^.getTestNameFor('testStepSteppingOverride')));
+
+CASE testState OF
+0: // Initialize
+	THIS^.resetCycleManager();
+	iConfiguration := cycleManager;
+	iCycleManager := cycleManager;
+	testState := 10;
+	
+10: // Scenario 1: Sequence stepping disabled, step stepping enabled
+	// Set sequence stepping to disabled
+	iConfiguration.configuration.sequence.stepping.disable();
+	
+	// Start cycle manager and move to test step
+	cycleManager.update(execute := TRUE);
+	iCycleManager.proceedWith(10);
+	testState := 20;
+	
+20: // Configure step-specific stepping to enabled
+	cycleManager.update(execute := TRUE);
+	
+	// Enable stepping for current step
+	iConfiguration.configuration.step.stepping.enable();
+	
+	// Should require manual proceed for next step
+	cycleManager.update(execute := TRUE, stepControl := FALSE);
+	testState := 30;
+	
+30: // Verify stepping is enabled (step override works)
+	cycleManager.update(execute := TRUE, stepControl := FALSE);
+	
+	// Should still be at step 10 because stepping is enabled
+	AssertEquals_DINT(
+		Expected := 10,
+		Actual := iCycleManager.step.current,
+		Message := 'Step stepping enabled should override sequence stepping disabled'
+	);
+	
+	// Manually proceed
+	iCycleManager.proceedWith(20);
+	testState := 40;
+	
+40: // Scenario 2: Sequence stepping enabled, step stepping disabled
+	cycleManager.update(execute := TRUE, stepControl := TRUE);
+	AssertEquals_DINT(
+		Expected := 20,
+		Actual := iCycleManager.step.current,
+		Message := 'Step should proceed to 20 with step signal true'
+	);
+	// Enable sequence stepping
+	iConfiguration.configuration.sequence.stepping.enable();
+	// Disable stepping for current step
+	iConfiguration.configuration.step.stepping.disable();
+	cycleManager.update(execute := TRUE, stepControl := FALSE);
+	// Set a command that completes successfully
+	testCommand.reset();
+	testCommand.returnState := CNM_ReturnTypes.SingleExecutionState.SUCCESS;
+	iCycleManager.executeCommand(testCommand);
+	
+	testState := 50;
+	
+50: // Command should auto-proceed (stepping disabled for step)
+	cycleManager.update(execute := TRUE, stepControl := FALSE);
+	
+	// Should have auto-proceeded to next step
+	AssertEquals_DINT(
+		Expected := 21,
+		Actual := iCycleManager.step.current,
+		Message := 'Step stepping disabled should override sequence stepping enabled'
+	);
+	
+	// Move to another step without step override
+	iCycleManager.proceedWith(30);
+	testState := 60;
+	
+60: // Verify sequence stepping works when no step override exists
+	cycleManager.update(execute := TRUE, stepControl := FALSE);
+	AssertEquals_DINT(
+		Expected := 21,
+		Actual := iCycleManager.step.current,
+		Message := 'Step stepping enabled should override sequence stepping disabled'
+	);
+	iCycleManager.proceedWith(30);
+	cycleManager.update(execute := TRUE, stepControl := TRUE);
+	cycleManager.update(execute := TRUE, stepControl := FALSE);
+	// Set another successful command
+	testCommand.reset();
+	testCommand.returnState := CNM_ReturnTypes.SingleExecutionState.SUCCESS;
+	iCycleManager.executeCommand(testCommand);
+	
+	cycleManager.update(execute := TRUE, stepControl := FALSE);
+	
+	// Should still be at step 30 (sequence stepping enabled)
+	AssertEquals_DINT(
+		Expected := 30,
+		Actual := iCycleManager.step.current,
+		Message := 'Sequence stepping should work when no step override exists'
+	);
+	
+	testState := 70;
+	
+70: // Cleanup
+	cycleManager.update(execute := FALSE);
+	testState := 0;
+	TEST_FINISHED();
+END_CASE
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="testStepStopRequestOverride" Id="{34cd56ef-78ab-9012-cdef-345678901234}">
+      <Declaration><![CDATA[(*
+
+short summary
+=================
+Tests that step-level stopRequest configuration overrides sequence-level stopRequest configuration.
+Tests all four stopRequest modes: AFTER_SUCCESS, AFTER_NOT_SUCCESS, ALWAYS, and IGNORE.
+
+.. <legal notes>
+
+legal notes
+=================
+| SPDX-FileCopyrightText: © 2025 ekvip automation GmbH <info@ekvip.de>
+| SPDX-License-Identifier: Apache-2.0
+| For details check: Apache-2.0_
+
+.. _Apache-2.0: https://www.apache.org/licenses/LICENSE-2.0
+
+.. </legal notes>
+
+*)
+METHOD PRIVATE testStepStopRequestOverride
+VAR_INST
+	testState : INT;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[RETURN( THIS^.testSuiteAborted OR_ELSE  NOT TcUnit.TEST_ORDERED(THIS^.getTestNameFor('testStepStopRequestOverride')));
+
+CASE testState OF
+0: // Initialize
+	THIS^.resetCycleManager();
+	iConfiguration := cycleManager;
+	iCycleManager := cycleManager;
+	testState := 10;
+	
+10: // Test 1: Sequence IGNORE, Step ALWAYS
+	// Set sequence to ignore stop requests
+	iConfiguration.configuration.sequence.stopRequest.ignore();
+	
+	// Start cycle manager and move to test step
+	cycleManager.update(execute := TRUE, stopRequest := TRUE);
+	iCycleManager.proceedWith(10);
+	testState := 20;
+	
+20: // Configure step to always stop
+	cycleManager.update(execute := TRUE, stopRequest := TRUE);
+	
+	// Set step to always honor stop request
+	iConfiguration.configuration.step.stopRequest.immediate();
+	
+	cycleManager.update(execute := TRUE, stopRequest := TRUE);
+	testState := 30;
+	
+30: // Verify step stops (overrides sequence IGNORE)
+	cycleManager.update(execute := TRUE, stopRequest := TRUE);
+	
+	AssertEquals_DINT(
+		Expected := CNM_ReturnTypes.SingleExecutionState.SUCCESS,
+		Actual := iCycleManager.state,
+		Message := 'Step ALWAYS should override sequence IGNORE'
+	);
+	
+	// Restart
+	cycleManager.update(execute := FALSE);
+	cycleManager.update(execute := TRUE);
+	iCycleManager.proceedWith(20);
+	testState := 40;
+	
+40: // Test 2: Sequence ALWAYS, Step IGNORE
+	cycleManager.update(execute := TRUE);
+	
+	// Set sequence to always stop
+	iConfiguration.configuration.sequence.stopRequest.immediate();
+	// Set step to ignore stop requests
+	iConfiguration.configuration.step.stopRequest.ignore();
+	
+	cycleManager.update(execute := TRUE, stopRequest := TRUE);
+	testState := 50;
+	
+50: // Verify step ignores stop (overrides sequence ALWAYS)
+	cycleManager.update(execute := TRUE, stopRequest := TRUE);
+	
+	AssertEquals_DINT(
+		Expected := 20,
+		Actual := iCycleManager.step.current,
+		Message := 'Step IGNORE should override sequence ALWAYS'
+	);
+	
+	// Move to next step
+	iCycleManager.proceedWith(30);
+	testState := 60;
+	
+60: // Test 3: Sequence AFTER_SUCCESS, Step AFTER_NOT_SUCCESS
+	cycleManager.update(execute := TRUE, stopRequest := FALSE);
+	
+	// Set sequence to stop after success
+	iConfiguration.configuration.sequence.stopRequest.afterSuccessfulStep();
+	// Set step to stop after not success
+	iConfiguration.configuration.step.stopRequest.onBusy();
+	cycleManager.update(execute := TRUE, stopRequest := FALSE);
+	// Execute successful command
+	testCommand.reset();
+	testCommand.returnState := CNM_ReturnTypes.SingleExecutionState.SUCCESS;
+	iCycleManager.executeCommand(testCommand);
+	
+	cycleManager.update(execute := TRUE, stopRequest := TRUE);
+	testState := 70;
+	
+70: // Verify no stop on success (step overrides)
+	cycleManager.update(execute := TRUE, stopRequest := TRUE);
+	
+	AssertEquals_DINT(
+		Expected := 31,
+		Actual := iCycleManager.step.current,
+		Message := 'Step AFTER_NOT_SUCCESS should not stop on success'
+	);
+	
+	// Move to next step
+	iCycleManager.proceedWith(40);
+	testState := 80;
+	
+80: // Test error condition for AFTER_NOT_SUCCESS
+	cycleManager.update(execute := TRUE, stopRequest := FALSE);
+	
+	// Still has step config for AFTER_NOT_SUCCESS
+	iConfiguration.configuration.step.stopRequest.onBusy();
+	cycleManager.update(execute := TRUE, stopRequest := FALSE);
+	// Execute failing command
+	testCommand.reset();
+	testCommand.returnState := CNM_ReturnTypes.SingleExecutionState.ERROR;
+	iCycleManager.executeCommand(testCommand);
+	
+	cycleManager.update(execute := TRUE, stopRequest := TRUE);
+	testState := 90;
+	
+90: // Verify stop on error (step AFTER_NOT_SUCCESS works)
+	cycleManager.update(execute := TRUE, stopRequest := TRUE);
+	
+	AssertEquals_INT(
+		Expected := CNM_ReturnTypes.SingleExecutionState.ERROR,
+		Actual := iCycleManager.state,
+		Message := 'Step AFTER_NOT_SUCCESS should go to error'
+	);
+	
+	testState := 100;
+	
+100: // Cleanup
+	cycleManager.update(execute := FALSE);
+	testState := 0;
+	TEST_FINISHED();
+END_CASE
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="testStepWidthConfig" Id="{c9012345-678a-bcde-f012-234567890abc}">
+      <Declaration><![CDATA[(*
+
+short summary
+=================
+Tests the fluent configuration API through ICycleManagerConfiguration.
+Verifies sequence and step-specific configuration capabilities.
+
+.. <legal notes>
+
+legal notes
+=================
+| SPDX-FileCopyrightText: © 2025 ekvip automation GmbH <info@ekvip.de>
+| SPDX-License-Identifier: Apache-2.0
+| For details check: Apache-2.0_
+
+.. _Apache-2.0: https://www.apache.org/licenses/LICENSE-2.0
+
+.. </legal notes>
+
+*)
+METHOD PRIVATE testStepWidthConfig
+VAR_INST
+	configScope : CNM_CycleManagerInterfaces.ICycleManagerConfigurationScope;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[RETURN( THIS^.testSuiteAborted OR_ELSE  NOT TcUnit.TEST_ORDERED(THIS^.getTestNameFor('testStepWidthConfig')));
+
+THIS^.resetCycleManager();
+configScope := THIS^.cycleManager.configuration;
+THIS^.cycleManager.update(execute := TRUE);
+AssertEquals_DINT(
+	Expected := CNM_ReturnTypes.DefaultSteps.STEP.INIT,
+	Actual := THIS^.cycleManager.step.current,
+	Message := 'step should be INIT step'
+);
+// set global stepWidth
+configScope.sequence.stepWidth := 7;
+THIS^.cycleManager.proceed();
+THIS^.cycleManager.update(execute := TRUE);
+AssertEquals_DINT(
+	Expected := (CNM_ReturnTypes.DefaultSteps.STEP.INIT + 7),
+	Actual := THIS^.cycleManager.step.current,
+	Message := 'step should be INIT step + 7'
+);
+// test it twice to make it nice
+THIS^.cycleManager.proceed();
+THIS^.cycleManager.update(execute := TRUE);
+AssertEquals_DINT(
+	Expected := (CNM_ReturnTypes.DefaultSteps.STEP.INIT + 14),
+	Actual := THIS^.cycleManager.step.current,
+	Message := 'step should be INIT step + 14'
+);
+// proceed with local stepWidth
+THIS^.cycleManager.proceedWith(10);
+THIS^.cycleManager.update(execute := TRUE);
+AssertEquals_DINT(
+	Expected := 10,
+	Actual := THIS^.cycleManager.step.current,
+	Message := 'stepWidth should be ignored by proceedWith(), step should be 10'
+);
+configScope.step.stepWidth := 5;
+THIS^.cycleManager.proceed();
+THIS^.cycleManager.update(execute := TRUE);
+AssertEquals_DINT(
+	Expected := 15,
+	Actual := THIS^.cycleManager.step.current,
+	Message := 'step should be 15'
+);
+// proceed again with global stepWidth
+THIS^.cycleManager.proceed();
+THIS^.cycleManager.update(execute := TRUE);
+AssertEquals_DINT(
+	Expected := 22,
+	Actual := THIS^.cycleManager.step.current,
+	Message := 'step should be 22'
+);
+
+TcUnit.TEST_FINISHED();
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="testStopRequestModes" Id="{14567890-bcde-0123-4567-789012345010}">
+      <Declaration><![CDATA[(*
+
+short summary
+=================
+Tests different stop request modes.
+Verifies AFTER_SUCCESS, AFTER_NOT_SUCCESS, ALWAYS, and IGNORE modes work correctly.
+
+.. <legal notes>
+
+legal notes
+=================
+| SPDX-FileCopyrightText: © 2025 ekvip automation GmbH <info@ekvip.de>
+| SPDX-License-Identifier: Apache-2.0
+| For details check: Apache-2.0_
+
+.. _Apache-2.0: https://www.apache.org/licenses/LICENSE-2.0
+
+.. </legal notes>
+
+*)
+METHOD PRIVATE testStopRequestModes
+VAR_INST
+	testState : INT;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[RETURN( THIS^.testSuiteAborted OR_ELSE  NOT TcUnit.TEST_ORDERED(THIS^.getTestNameFor('testStopRequestModes')));
+
+CASE testState OF
+0: // Initialize
+	THIS^.resetCycleManager();
+	iConfiguration := cycleManager;
+	iCycleManager := cycleManager;
+	testState := 10;
+	
+10: // Test AFTER_SUCCESS mode
+	cycleManager.update(execute := TRUE, stopRequest := FALSE);
+	
+	// Configure stop request mode
+	iConfiguration.configuration.sequence.stopRequest.afterSuccessfulStep();
+	
+	iCycleManager.proceedWith(10);
+	cycleManager.update(execute := TRUE, stopRequest := FALSE);
+	testState := 20;
+	
+20: // Evaluate success with stop request
+	cycleManager.update(execute := TRUE, stopRequest := TRUE);
+	AssertEquals_DINT(
+		Expected := 10,
+		Actual := iCycleManager.step.current,
+		Message := 'Should stay in step 10 until successful evaluate'
+	);
+	IF iCycleManager.executeStep THEN
+		// Evaluate success
+		iCycleManager.evaluate(CNM_ReturnTypes.SingleExecutionState.SUCCESS);
+		testState := 30;
+	END_IF
+	
+30: // Verify moved to success due to stop request
+	cycleManager.update(execute := TRUE, stopRequest := TRUE);
+	
+	AssertEquals_DINT(
+		Expected := CNM_ReturnTypes.DefaultSteps.STEP.SUCCESS,
+		Actual := iCycleManager.step.current,
+		Message := 'Should move to SUCCESS with stop request after success'
+	);
+	
+	AssertEquals_INT(
+		Expected := CNM_ReturnTypes.SingleExecutionState.SUCCESS,
+		Actual := iCycleManager.state,
+		Message := 'state should be success after stop request'
+	);
+	
+	// Test IGNORE mode
+	cycleManager.update(execute := FALSE, stopRequest := FALSE);
+	testState := 40;
+	
+40: // Test IGNORE mode
+	cycleManager.update(execute := TRUE, stopRequest := FALSE);
+	
+	iConfiguration.configuration.sequence.stopRequest.ignore();
+	
+	iCycleManager.proceedWith(20);
+	testState := 50;
+	
+50: // Stop request should be ignored
+	cycleManager.update(execute := TRUE, stopRequest := TRUE);
+	IF iCycleManager.executeStep THEN
+		iCycleManager.evaluate(CNM_ReturnTypes.SingleExecutionState.SUCCESS);
+		testState := 60;
+	END_IF
+
+60: // Verify proceeded normally
+	cycleManager.update(execute := TRUE, stopRequest := TRUE);
+	
+	AssertEquals_DINT(
+		Expected := 21, // Proceeded normally, not to SUCCESS
+		Actual := iCycleManager.step.current,
+		Message := 'Should proceed normally with IGNORE mode'
+	);
+	
+	// Test ALWAYS mode
+	cycleManager.update(execute := FALSE, stopRequest := FALSE);
+	testState := 70;
+	
+70: // Test ALWAYS mode
+	cycleManager.update(execute := TRUE, stopRequest := FALSE);
+	
+	iConfiguration.configuration.sequence.stopRequest.immediate();
+	
+	iCycleManager.proceedWith(30);
+	cycleManager.update(execute := TRUE, stopRequest := FALSE);
+
+	testState := 80;
+	
+80: // Stop request with ALWAYS mode
+	cycleManager.update(execute := TRUE, stopRequest := TRUE);
+	
+	// Should immediately go to SUCCESS regardless of state
+	testState := 90;
+	
+90: // Verify moved to SUCCESS
+	cycleManager.update(execute := TRUE, stopRequest := TRUE);
+	
+	AssertEquals_DINT(
+		Expected := CNM_ReturnTypes.DefaultSteps.STEP.SUCCESS,
+		Actual := iCycleManager.step.current,
+		Message := 'Should always move to SUCCESS with ALWAYS mode'
+	);
+	AssertEquals_INT(
+		Expected := CNM_ReturnTypes.SingleExecutionState.SUCCESS,
+		Actual := iCycleManager.state,
+		Message := 'State should be SUCCESS'
+	);
+	
+	// Test ALWAYS mode from error state
+	cycleManager.update(execute := FALSE, stopRequest := FALSE);
+	testState := 100;
+	
+100: // Setup for error state test
+	cycleManager.update(execute := TRUE, stopRequest := FALSE);
+	iCycleManager.proceedWith(40);
+	testState := 110;
+	
+110: // Create error condition
+	cycleManager.update(execute := TRUE, stopRequest := FALSE);
+	IF iCycleManager.executeStep THEN
+		iCycleManager.evaluate(
+			state := CNM_ReturnTypes.SingleExecutionState.ERROR,
+			errorStep := 999
+		);
+		testState := 120;
+	END_IF
+	
+120: // In error step, activate stop request
+	cycleManager.update(execute := TRUE, stopRequest := FALSE);
+	AssertEquals_DINT(
+		Expected := 999,
+		Actual := iCycleManager.step.current,
+		Message := 'Should be in error step'
+	);
+	cycleManager.update(execute := TRUE, stopRequest := TRUE);
+	testState := 130;
+	
+130: // Verify ALWAYS mode works from error
+	cycleManager.update(execute := TRUE, stopRequest := TRUE);
+	AssertEquals_DINT(
+		Expected := CNM_ReturnTypes.DefaultSteps.STEP.SUCCESS,
+		Actual := iCycleManager.step.current,
+		Message := 'ALWAYS mode should work even from error step'
+	);
+	
+	// Test AFTER_NOT_SUCCESS mode
+	cycleManager.update(execute := FALSE, stopRequest := FALSE);
+	testState := 140;
+	
+140: // Test AFTER_NOT_SUCCESS mode
+	cycleManager.update(execute := TRUE, stopRequest := FALSE);	
+	iCycleManager.proceedWith(50);
+	cycleManager.update(execute := TRUE, stopRequest := FALSE);
+	cycleManager.update(execute := TRUE, stopRequest := FALSE);
+	testState := 150;
+	
+150: // Evaluate SUCCESS with stop request
+	iCycleManager.evaluate(CNM_ReturnTypes.SingleExecutionState.SUCCESS);
+	iConfiguration.configuration.sequence.stopRequest.onBusy();
+	cycleManager.update(execute := TRUE, stopRequest := TRUE);
+	// With AFTER_NOT_SUCCESS and SUCCESS evaluation, should abort
+	IF THIS^.cycleManager.executeStep THEN 
+		testState := 160;
+	END_IF
+	
+160: // Verify moved to step 51 instead of SUCCESS
+	AssertEquals_DINT(
+		Expected := 51,
+		Actual := iCycleManager.step.current,
+		Message := 'Should have moved to step 51'
+	);
+	
+	// Test AFTER_NOT_SUCCESS with ERROR
+	cycleManager.update(execute := FALSE, stopRequest := FALSE);
+	cycleManager.update(execute := TRUE, stopRequest := FALSE);
+	iCycleManager.proceedWith(60);
+	testState := 170;
+	
+170: // Create error condition
+	cycleManager.update(execute := TRUE, stopRequest := TRUE);
+	iCycleManager.evaluate(
+		state := CNM_ReturnTypes.SingleExecutionState.ERROR,
+		errorStep := 888
+	);
+	IF iCycleManager.executeStep THEN
+		testState := 180;
+	END_IF
+	
+180: // Verify moved to SUCCESS after error
+	cycleManager.update(execute := TRUE, stopRequest := TRUE);
+	AssertEquals_DINT(
+		Expected := 888,
+		Actual := iCycleManager.step.current,
+		Message := 'Should move to ERROR with ON_BUSY after ERROR'
+	);
+	
+	// Test AFTER_NOT_SUCCESS with BUSY
+	cycleManager.update(execute := FALSE, stopRequest := FALSE);
+	testState := 190;
+	
+190: // Setup for error test
+	cycleManager.update(execute := TRUE, stopRequest := FALSE);
+	iCycleManager.proceedWith(70);
+	testState := 200;
+	
+200: // Create error condition
+	cycleManager.update(execute := TRUE, stopRequest := TRUE);
+	iCycleManager.evaluate(
+		state := CNM_ReturnTypes.SingleExecutionState.BUSY
+	);
+	IF iCycleManager.executeStep THEN
+		testState := 210;
+	END_IF
+	
+210: // Verify moved to SUCCESS after timeout
+	cycleManager.update(execute := TRUE, stopRequest := TRUE);
+	AssertEquals_DINT(
+		Expected := CNM_ReturnTypes.DefaultSteps.STEP.SUCCESS,
+		Actual := iCycleManager.step.current,
+		Message := 'Should move to SUCCESS with AFTER_NOT_SUCCESS after BUSY'
+	);
+	
+	cycleManager.update(execute := FALSE);
+	testState := 0;
+	TEST_FINISHED();
+END_CASE
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="testSuccessRequiredConfig" Id="{73513dd3-bfb8-44e4-91fd-b66a512db13c}">
+      <Declaration><![CDATA[(*
+
+short summary
+=================
+Tests the succes step reuqired config. Normally the cyclemanager returns the state dependign on the current step (SUCCESS-Step = SUCCESS state).
+To speed it up the SUCCESS state can be returned  on cycle earlier when transitioning to SUCCESS step.
+
+.. <legal notes>
+
+legal notes
+=================
+| SPDX-FileCopyrightText: © 2025 ekvip automation GmbH <info@ekvip.de>
+| SPDX-License-Identifier: Apache-2.0
+| For details check: Apache-2.0_
+
+.. _Apache-2.0: https://www.apache.org/licenses/LICENSE-2.0
+
+.. </legal notes>
+
+*)
+
+METHOD testSuccessRequiredConfig
+VAR
+	sequenceConfigScope :CNM_CycleManagerInterfaces.ISequenceConfiguration;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[RETURN( THIS^.testSuiteAborted OR_ELSE  NOT TcUnit.TEST_ORDERED(THIS^.getTestNameFor('testSuccessRequiredConfig')));
+
+THIS^.resetCycleManager();
+sequenceConfigScope := cycleManager.configuration.sequence;
+cycleManager.update(execute := TRUE);
+cycleManager.update(execute := TRUE);
+sequenceConfigScope.requireSuccessStep := TRUE;
+cycleManager.step.next := CNM_ReturnTypes.DefaultSteps.STEP.SUCCESS;
+cycleManager.evaluate(state := CNM_ReturnTypes.SingleExecutionState.SUCCESS);
+AssertEquals_DINT(
+	Expected := CNM_ReturnTypes.DefaultSteps.STEP.INIT,
+	Actual := THIS^.cycleManager.step.current,
+	Message := 'Step should be INIT'
+);
+AssertEquals_INT(
+	Expected := CNM_ReturnTypes.SingleExecutionState.BUSY,
+	Actual := cycleManager.state,
+	Message := 'State should be busy'
+); 
+cycleManager.update(execute := TRUE);
+AssertEquals_DINT(
+	Expected := CNM_ReturnTypes.DefaultSteps.STEP.SUCCESS,
+	Actual := THIS^.cycleManager.step.current,
+	Message := 'Step should be SUCCESS'
+);
+AssertEquals_INT(
+	Expected := CNM_ReturnTypes.SingleExecutionState.SUCCESS,
+	Actual := cycleManager.state,
+	Message := 'State should be SUCCESS'
+);
+	
+cycleManager.update(execute := FALSE);
+cycleManager.update(execute := TRUE);
+cycleManager.update(execute := TRUE);
+sequenceConfigScope.requireSuccessStep := FALSE;
+cycleManager.step.next := CNM_ReturnTypes.DefaultSteps.STEP.SUCCESS;
+cycleManager.evaluate(state := CNM_ReturnTypes.SingleExecutionState.SUCCESS);
+AssertEquals_DINT(
+	Expected := CNM_ReturnTypes.DefaultSteps.STEP.INIT,
+	Actual := THIS^.cycleManager.step.current,
+	Message := 'Step should be INIT'
+);
+AssertEquals_INT(
+	Expected := CNM_ReturnTypes.SingleExecutionState.SUCCESS,
+	Actual := cycleManager.state,
+	Message := 'State should be SUCCESS immediately '
+);
+
+TcUnit.TEST_FINISHED();]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="testTimeoutBehavior" Id="{f2345678-9abc-ef01-2345-567890123def}">
+      <Declaration><![CDATA[(*
+
+short summary
+=================
+Tests timeout behavior of the cycle manager.
+Verifies timeout configuration and automatic transition to timeout step.
+
+.. <legal notes>
+
+legal notes
+=================
+| SPDX-FileCopyrightText: © 2025 ekvip automation GmbH <info@ekvip.de>
+| SPDX-License-Identifier: Apache-2.0
+| For details check: Apache-2.0_
+
+.. _Apache-2.0: https://www.apache.org/licenses/LICENSE-2.0
+
+.. </legal notes>
+
+*)
+METHOD PRIVATE testTimeoutBehavior
+VAR_INST
+	testState : INT;
+	timeoutTimer : TON;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[RETURN( THIS^.testSuiteAborted OR_ELSE  NOT TcUnit.TEST_ORDERED(THIS^.getTestNameFor('testTimeoutBehavior')));
+
+CASE testState OF
+0: // Initialize
+	THIS^.resetCycleManager();
+	iConfiguration := cycleManager;
+	iCycleManager := cycleManager;
+	testState := 10;
+	
+10: // Configure timeout
+	cycleManager.update(execute := TRUE);
+	
+	// Set sequence timeout
+	iConfiguration.configuration.sequence.timeout := T#100MS;
+	iConfiguration.configuration.sequence.timeoutStep := 999;
+	
+	iCycleManager.proceedWith(10);
+	testState := 20;
+	
+20: // Wait for timeout
+	cycleManager.update(execute := TRUE); // Disable step control to trigger timeout
+	// Start timer to track timeout
+	timeoutTimer(IN := cycleManager.executeStep, PT := T#110MS);
+	CASE cycleManager.step.current OF 
+	10:
+		IF timeoutTimer.Q THEN
+			AssertTrue(
+				Condition := FALSE,
+				Message := 'Cyclemanager timeout not triggered in time'
+			);
+			testState := 100;
+		END_IF
+	999:
+		testState := 30;
+	ELSE
+		AssertTrue(
+			Condition := FALSE,
+			Message := 'wrong step after timeout monitoring detected'
+		);
+		testState := 100;
+	END_CASE
+	
+30:
+	AssertTrue(
+		Condition := cycleManager.errors.isInErrorStep,
+		Message := 'Timeout step should be marked as error step'
+	);
+	cycleManager.proceedWith(10);
+	testState := 40;
+40:
+	cycleManager.update(execute := TRUE);
+	cycleManager.configuration.step.timeoutStep := 666;
+	cycleManager.configuration.step.timeout := T#50MS;
+	timeoutTimer(IN := cycleManager.executeStep, PT := T#60MS);
+	CASE cycleManager.step.current OF
+	10:
+		IF timeoutTimer.Q THEN
+			AssertTrue(
+				Condition := FALSE,
+				Message := 'Cyclemanager timeout not triggered in time'
+			);
+			testState := 100;
+		END_IF
+	666:
+		testState := 50;
+		AssertTrue(
+			Condition := cycleManager.errors.isInErrorStep,
+			Message := 'Timeout step should be marked as error step'
+		);
+		cycleManager.proceedWith(10);	
+	999:
+		AssertTrue(
+			Condition := FALSE,
+			Message := 'global sequence timeout triggered instead of local step configuration'
+		);
+		testState := 100;
+	ELSE
+		AssertTrue(
+			Condition := FALSE,
+			Message := 'wrong step after timeout monitoring detected'
+		);
+		testState := 100;	
+	END_CASE
+50:
+	// Wait for timeout
+	cycleManager.update(execute := TRUE); // Disable step control to trigger timeout
+	// Start timer to track timeout
+	timeoutTimer(IN := cycleManager.executeStep, PT := T#110MS);
+	CASE cycleManager.step.current OF 
+	10:
+		IF timeoutTimer.Q THEN
+			AssertTrue(
+				Condition := FALSE,
+				Message := 'Cyclemanager timeout not triggered in time'
+			);
+			testState := 100;
+		END_IF
+	999:
+		testState := 100;
+	ELSE
+		AssertTrue(
+			Condition := FALSE,
+			Message := 'wrong step after timeout monitoring detected'
+		);
+		testState := 100;
+	END_CASE
+100:
+	TEST_FINISHED();
+END_CASE
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="testWaitForMethod" Id="{f6a7b890-1234-5678-fabc-789012345678}">
+      <Declaration><![CDATA[(*
+
+short summary
+=================
+Tests the waitFor() method behavior.
+Verifies that the cycle manager waits for a boolean condition before proceeding.
+
+.. <legal notes>
+
+legal notes
+=================
+| SPDX-FileCopyrightText: © 2025 ekvip automation GmbH <info@ekvip.de>
+| SPDX-License-Identifier: Apache-2.0
+| For details check: Apache-2.0_
+
+.. _Apache-2.0: https://www.apache.org/licenses/LICENSE-2.0
+
+.. </legal notes>
+
+*)
+METHOD PRIVATE testWaitForMethod
+VAR_INST
+	testState : INT;
+	waitCondition : BOOL;
+	cycleCount : INT;
+END_VAR
+VAR
+	foo :POINTER TO BYTE := ADR(waitCondition);
+	bar : ARRAY [0..1] OF DINT := [10, 11];
+	
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[RETURN( THIS^.testSuiteAborted OR_ELSE  NOT TcUnit.TEST_ORDERED(THIS^.getTestNameFor('testWaitForMethod')));
+
+CASE testState OF
+0: // Initialize
+	THIS^.resetCycleManager();
+	iCycleManager := cycleManager;
+	waitCondition := FALSE;
+	cycleCount := 0;
+	testState := 10;
+	
+10: // Start and move to test step
+	cycleManager.update(execute := TRUE);
+	iCycleManager.proceedWith(10);
+	testState := 20;
+	cycleManager.update(execute := TRUE);
+	
+20: // Test waitFor
+	// After 3 cycles, set condition true
+	cycleCount := cycleCount + 1;
+	IF cycleCount >= 4 THEN
+		waitCondition := TRUE;
+		testState := 30;
+		cycleCount := 0;
+	END_IF
+	iCycleManager.waitFor(value := waitCondition);
+	
+	cycleManager.update(execute := TRUE);
+	// Wait should keep step busy
+	AssertEquals_DINT(
+		Expected := bar[foo^],
+		Actual := iCycleManager.step.current,
+		Message := 'Step should only change when waitForCondition is true'
+	);
+	waitCondition := FALSE;
+	
+30: // Verify proceeded to next step
+	cycleManager.update(execute := TRUE);
+	cycleManager.waitFor(TRUE);
+	AssertEquals_DINT(
+		Expected := 11, // Default step width is 1
+		Actual := iCycleManager.step.current,
+		Message := 'Should not proceed without update call'
+	);
+	cycleManager.update(execute := TRUE);
+	AssertEquals_DINT(
+		Expected := 12, // Default step width is 1
+		Actual := iCycleManager.step.current,
+		Message := 'Should proceed after update call'
+	);
+	
+	TEST_FINISHED();	
+END_CASE
+]]></ST>
+      </Implementation>
+    </Method>
+  </POU>
+</TcPlcObject>

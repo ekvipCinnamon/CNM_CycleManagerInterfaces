@@ -1,0 +1,79 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# TcXaeShell Solution File, Format Version 11.00
+VisualStudioVersion = 17.7.34302.85
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{B1E792BE-AA5F-4E3C-8C82-674BF9C0715B}") = "CNM_CycleManagerInterfaces", "CNM_CycleManagerInterfaces.tsproj", "{534D9F95-6949-4483-B562-58B89EDB23AC}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|TwinCAT OS (ARMV7-A) = Debug|TwinCAT OS (ARMV7-A)
+		Debug|TwinCAT OS (ARMV7-M) = Debug|TwinCAT OS (ARMV7-M)
+		Debug|TwinCAT OS (ARMV8-A) = Debug|TwinCAT OS (ARMV8-A)
+		Debug|TwinCAT OS (x64) = Debug|TwinCAT OS (x64)
+		Debug|TwinCAT RT (x64) = Debug|TwinCAT RT (x64)
+		Debug|TwinCAT RT (x86) = Debug|TwinCAT RT (x86)
+		Release|TwinCAT OS (ARMV7-A) = Release|TwinCAT OS (ARMV7-A)
+		Release|TwinCAT OS (ARMV7-M) = Release|TwinCAT OS (ARMV7-M)
+		Release|TwinCAT OS (ARMV8-A) = Release|TwinCAT OS (ARMV8-A)
+		Release|TwinCAT OS (x64) = Release|TwinCAT OS (x64)
+		Release|TwinCAT RT (x64) = Release|TwinCAT RT (x64)
+		Release|TwinCAT RT (x86) = Release|TwinCAT RT (x86)
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{534D9F95-6949-4483-B562-58B89EDB23AC}.Debug|TwinCAT OS (ARMV7-A).ActiveCfg = Debug|TwinCAT OS (ARMV7-A)
+		{534D9F95-6949-4483-B562-58B89EDB23AC}.Debug|TwinCAT OS (ARMV7-A).Build.0 = Debug|TwinCAT OS (ARMV7-A)
+		{534D9F95-6949-4483-B562-58B89EDB23AC}.Debug|TwinCAT OS (ARMV7-M).ActiveCfg = Debug|TwinCAT OS (ARMV7-M)
+		{534D9F95-6949-4483-B562-58B89EDB23AC}.Debug|TwinCAT OS (ARMV7-M).Build.0 = Debug|TwinCAT OS (ARMV7-M)
+		{534D9F95-6949-4483-B562-58B89EDB23AC}.Debug|TwinCAT OS (ARMV8-A).ActiveCfg = Debug|TwinCAT OS (ARMV8-A)
+		{534D9F95-6949-4483-B562-58B89EDB23AC}.Debug|TwinCAT OS (ARMV8-A).Build.0 = Debug|TwinCAT OS (ARMV8-A)
+		{534D9F95-6949-4483-B562-58B89EDB23AC}.Debug|TwinCAT OS (x64).ActiveCfg = Debug|TwinCAT OS (x64)
+		{534D9F95-6949-4483-B562-58B89EDB23AC}.Debug|TwinCAT OS (x64).Build.0 = Debug|TwinCAT OS (x64)
+		{534D9F95-6949-4483-B562-58B89EDB23AC}.Debug|TwinCAT RT (x64).ActiveCfg = Debug|TwinCAT RT (x64)
+		{534D9F95-6949-4483-B562-58B89EDB23AC}.Debug|TwinCAT RT (x64).Build.0 = Debug|TwinCAT RT (x64)
+		{534D9F95-6949-4483-B562-58B89EDB23AC}.Debug|TwinCAT RT (x86).ActiveCfg = Debug|TwinCAT RT (x86)
+		{534D9F95-6949-4483-B562-58B89EDB23AC}.Debug|TwinCAT RT (x86).Build.0 = Debug|TwinCAT RT (x86)
+		{534D9F95-6949-4483-B562-58B89EDB23AC}.Release|TwinCAT OS (ARMV7-A).ActiveCfg = Release|TwinCAT OS (ARMV7-A)
+		{534D9F95-6949-4483-B562-58B89EDB23AC}.Release|TwinCAT OS (ARMV7-A).Build.0 = Release|TwinCAT OS (ARMV7-A)
+		{534D9F95-6949-4483-B562-58B89EDB23AC}.Release|TwinCAT OS (ARMV7-M).ActiveCfg = Release|TwinCAT OS (ARMV7-M)
+		{534D9F95-6949-4483-B562-58B89EDB23AC}.Release|TwinCAT OS (ARMV7-M).Build.0 = Release|TwinCAT OS (ARMV7-M)
+		{534D9F95-6949-4483-B562-58B89EDB23AC}.Release|TwinCAT OS (ARMV8-A).ActiveCfg = Release|TwinCAT OS (ARMV8-A)
+		{534D9F95-6949-4483-B562-58B89EDB23AC}.Release|TwinCAT OS (ARMV8-A).Build.0 = Release|TwinCAT OS (ARMV8-A)
+		{534D9F95-6949-4483-B562-58B89EDB23AC}.Release|TwinCAT OS (x64).ActiveCfg = Release|TwinCAT OS (x64)
+		{534D9F95-6949-4483-B562-58B89EDB23AC}.Release|TwinCAT OS (x64).Build.0 = Release|TwinCAT OS (x64)
+		{534D9F95-6949-4483-B562-58B89EDB23AC}.Release|TwinCAT RT (x64).ActiveCfg = Release|TwinCAT RT (x64)
+		{534D9F95-6949-4483-B562-58B89EDB23AC}.Release|TwinCAT RT (x64).Build.0 = Release|TwinCAT RT (x64)
+		{534D9F95-6949-4483-B562-58B89EDB23AC}.Release|TwinCAT RT (x86).ActiveCfg = Release|TwinCAT RT (x86)
+		{534D9F95-6949-4483-B562-58B89EDB23AC}.Release|TwinCAT RT (x86).Build.0 = Release|TwinCAT RT (x86)
+		{820FBD5B-B386-400D-B656-9633F9DF2E61}.Debug|TwinCAT OS (ARMV7-A).ActiveCfg = Debug|TwinCAT OS (ARMV7-A)
+		{820FBD5B-B386-400D-B656-9633F9DF2E61}.Debug|TwinCAT OS (ARMV7-A).Build.0 = Debug|TwinCAT OS (ARMV7-A)
+		{820FBD5B-B386-400D-B656-9633F9DF2E61}.Debug|TwinCAT OS (ARMV7-M).ActiveCfg = Debug|TwinCAT OS (ARMV7-M)
+		{820FBD5B-B386-400D-B656-9633F9DF2E61}.Debug|TwinCAT OS (ARMV7-M).Build.0 = Debug|TwinCAT OS (ARMV7-M)
+		{820FBD5B-B386-400D-B656-9633F9DF2E61}.Debug|TwinCAT OS (ARMV8-A).ActiveCfg = Debug|TwinCAT OS (ARMV8-A)
+		{820FBD5B-B386-400D-B656-9633F9DF2E61}.Debug|TwinCAT OS (ARMV8-A).Build.0 = Debug|TwinCAT OS (ARMV8-A)
+		{820FBD5B-B386-400D-B656-9633F9DF2E61}.Debug|TwinCAT OS (x64).ActiveCfg = Debug|TwinCAT OS (x64)
+		{820FBD5B-B386-400D-B656-9633F9DF2E61}.Debug|TwinCAT OS (x64).Build.0 = Debug|TwinCAT OS (x64)
+		{820FBD5B-B386-400D-B656-9633F9DF2E61}.Debug|TwinCAT RT (x64).ActiveCfg = Debug|TwinCAT RT (x64)
+		{820FBD5B-B386-400D-B656-9633F9DF2E61}.Debug|TwinCAT RT (x64).Build.0 = Debug|TwinCAT RT (x64)
+		{820FBD5B-B386-400D-B656-9633F9DF2E61}.Debug|TwinCAT RT (x86).ActiveCfg = Debug|TwinCAT RT (x86)
+		{820FBD5B-B386-400D-B656-9633F9DF2E61}.Debug|TwinCAT RT (x86).Build.0 = Debug|TwinCAT RT (x86)
+		{820FBD5B-B386-400D-B656-9633F9DF2E61}.Release|TwinCAT OS (ARMV7-A).ActiveCfg = Release|TwinCAT OS (ARMV7-A)
+		{820FBD5B-B386-400D-B656-9633F9DF2E61}.Release|TwinCAT OS (ARMV7-A).Build.0 = Release|TwinCAT OS (ARMV7-A)
+		{820FBD5B-B386-400D-B656-9633F9DF2E61}.Release|TwinCAT OS (ARMV7-M).ActiveCfg = Release|TwinCAT OS (ARMV7-M)
+		{820FBD5B-B386-400D-B656-9633F9DF2E61}.Release|TwinCAT OS (ARMV7-M).Build.0 = Release|TwinCAT OS (ARMV7-M)
+		{820FBD5B-B386-400D-B656-9633F9DF2E61}.Release|TwinCAT OS (ARMV8-A).ActiveCfg = Release|TwinCAT OS (ARMV8-A)
+		{820FBD5B-B386-400D-B656-9633F9DF2E61}.Release|TwinCAT OS (ARMV8-A).Build.0 = Release|TwinCAT OS (ARMV8-A)
+		{820FBD5B-B386-400D-B656-9633F9DF2E61}.Release|TwinCAT OS (x64).ActiveCfg = Release|TwinCAT OS (x64)
+		{820FBD5B-B386-400D-B656-9633F9DF2E61}.Release|TwinCAT OS (x64).Build.0 = Release|TwinCAT OS (x64)
+		{820FBD5B-B386-400D-B656-9633F9DF2E61}.Release|TwinCAT RT (x64).ActiveCfg = Release|TwinCAT RT (x64)
+		{820FBD5B-B386-400D-B656-9633F9DF2E61}.Release|TwinCAT RT (x64).Build.0 = Release|TwinCAT RT (x64)
+		{820FBD5B-B386-400D-B656-9633F9DF2E61}.Release|TwinCAT RT (x86).ActiveCfg = Release|TwinCAT RT (x86)
+		{820FBD5B-B386-400D-B656-9633F9DF2E61}.Release|TwinCAT RT (x86).Build.0 = Release|TwinCAT RT (x86)
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {5E020F93-4AF6-4810-A573-AA54B36CFEC3}
+	EndGlobalSection
+EndGlobal

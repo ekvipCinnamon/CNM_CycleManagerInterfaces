@@ -1,0 +1,254 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1">
+  <POU Name="TestAlarm" Id="{d0789012-789a-bcde-5678-901234562232}" SpecialFunc="None">
+    <Declaration><![CDATA[(*
+
+short summary
+=================
+Test implementation of IAlarm interface for unit testing.
+Simulates alarm behavior with throw, acknowledge, and pending state tracking.
+
+.. <legal notes>
+
+legal notes
+=================
+| SPDX-FileCopyrightText: © 2025 ekvip automation GmbH <info@ekvip.de>
+| SPDX-License-Identifier: Apache-2.0
+| For details check: Apache-2.0_
+
+.. _Apache-2.0: https://www.apache.org/licenses/LICENSE-2.0
+
+.. </legal notes>
+
+methods and properties
+=========================
+
+*)
+FUNCTION_BLOCK TestAlarm EXTENDS CNM_AbstractObject.Object IMPLEMENTS CNM_MessageInterfaces.IAlarm
+VAR
+	wasThrownMarker : BOOL;
+	isPendingValue : BOOL;
+	acknowledgeCounter : INT;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[]]></ST>
+    </Implementation>
+    <Method Name="acknowledge" Id="{f2901234-9abc-ef01-789a-123456784454}">
+      <Declaration><![CDATA[(*
+
+short summary
+=================
+Acknowledges the alarm and clears the pending state.
+Increments the acknowledge counter for test verification.
+
+.. <legal notes>
+
+legal notes
+=================
+| SPDX-FileCopyrightText: © 2025 ekvip automation GmbH <info@ekvip.de>
+| SPDX-License-Identifier: Apache-2.0
+| For details check: Apache-2.0_
+
+.. _Apache-2.0: https://www.apache.org/licenses/LICENSE-2.0
+
+.. </legal notes>
+
+*)
+METHOD acknowledge : CNM_ReturnTypes.SingleExecutionResult
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[THIS^.isPendingValue := FALSE;
+THIS^.acknowledgeCounter := THIS^.acknowledgeCounter + 1;
+acknowledge := CNM_ReturnTypes.SingleExecutionResult.SUCCESS;
+]]></ST>
+      </Implementation>
+    </Method>
+    <Property Name="className" Id="{36345678-def0-3456-bcde-567890128898}">
+      <Declaration><![CDATA[PROPERTY className : CNM_AbstractObject.ClassName
+]]></Declaration>
+      <Get Name="Get" Id="{47456789-ef01-4567-cdef-678901239909}">
+        <Declaration><![CDATA[]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[className := 'TestAlarm';
+]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Method Name="clear" Id="{b7665660-0c82-49fe-93a7-30a98be87b80}">
+      <Declaration><![CDATA[(*
+
+short summary
+=================
+This method clears the message and resets it to a predefined state.
+
+.. <legal notes>
+
+legal notes
+=================
+| SPDX-FileCopyrightText: © 2024 ekvip automation GmbH <info@ekvip.de>
+| SPDX-License-Identifier: Apache-2.0
+| For details check: Apache-2.0_
+
+.. _Apache-2.0: https://www.apache.org/licenses/LICENSE-2.0
+
+.. </legal notes>
+
+*)
+METHOD clear
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[]]></ST>
+      </Implementation>
+    </Method>
+    <Property Name="dto" Id="{3f3eee17-d43c-4deb-a52c-b8ba931782e2}">
+      <Declaration><![CDATA[
+(*
+
+short summary
+=================
+This property returns the dto of the message containing the data.
+
+.. <legal notes>
+
+legal notes
+=================
+| SPDX-FileCopyrightText: © 2024 ekvip automation GmbH <info@ekvip.de>
+| SPDX-License-Identifier: Apache-2.0
+| For details check: Apache-2.0_
+
+.. _Apache-2.0: https://www.apache.org/licenses/LICENSE-2.0
+
+.. </legal notes>
+
+*)
+PROPERTY dto : CNM_MessageInterfaces.IMessageDto
+]]></Declaration>
+      <Get Name="Get" Id="{ec4290d5-2f10-48eb-b012-70d89442a7c9}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Method Name="invoke" Id="{b322d326-6296-487b-93a5-a13e1dab9039}">
+      <Declaration><![CDATA[(*
+
+short summary
+=================
+Invokes the action associated with this interface.
+
+.. <legal notes>
+
+legal notes
+=================
+| SPDX-FileCopyrightText: © 2024 ekvip automation GmbH <info@ekvip.de>
+| SPDX-License-Identifier: Apache-2.0
+| For details check: Apache-2.0_
+
+.. _Apache-2.0: https://www.apache.org/licenses/LICENSE-2.0
+
+.. </legal notes>
+
+parameters
+=================
+
+*)
+METHOD invoke : CNM_CommandInterfaces.CNM_ReturnTypes.SingleExecutionResult
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[]]></ST>
+      </Implementation>
+    </Method>
+    <Property Name="isPending" Id="{14123456-bcde-1234-9abc-345678906676}">
+      <Declaration><![CDATA[PROPERTY isPending : BOOL
+]]></Declaration>
+      <Get Name="Get" Id="{25234567-cdef-2345-abcd-456789017787}">
+        <Declaration><![CDATA[]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[isPending := THIS^.isPendingValue;
+]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Method Name="reset" Id="{03012345-abcd-0123-89ab-234567895565}">
+      <Declaration><![CDATA[(*
+
+short summary
+=================
+Resets all alarm state variables to initial values.
+
+.. <legal notes>
+
+legal notes
+=================
+| SPDX-FileCopyrightText: © 2025 ekvip automation GmbH <info@ekvip.de>
+| SPDX-License-Identifier: Apache-2.0
+| For details check: Apache-2.0_
+
+.. _Apache-2.0: https://www.apache.org/licenses/LICENSE-2.0
+
+.. </legal notes>
+
+*)
+METHOD reset
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[THIS^.wasThrownMarker := FALSE;
+THIS^.isPendingValue := FALSE;
+THIS^.acknowledgeCounter := 0;
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="throw" Id="{e1890123-89ab-cdef-6789-012345673343}">
+      <Declaration><![CDATA[(*
+
+short summary
+=================
+Throws the test alarm by setting pending state.
+Tracks that the alarm was thrown for test verification.
+
+.. <legal notes>
+
+legal notes
+=================
+| SPDX-FileCopyrightText: © 2025 ekvip automation GmbH <info@ekvip.de>
+| SPDX-License-Identifier: Apache-2.0
+| For details check: Apache-2.0_
+
+.. _Apache-2.0: https://www.apache.org/licenses/LICENSE-2.0
+
+.. </legal notes>
+
+*)
+METHOD throw
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[THIS^.wasThrownMarker := TRUE;
+THIS^.isPendingValue := TRUE;
+]]></ST>
+      </Implementation>
+    </Method>
+    <Property Name="wasThrown" Id="{db697f75-4673-4111-88bd-906d75162e92}">
+      <Declaration><![CDATA[PROPERTY wasThrown : BOOL]]></Declaration>
+      <Get Name="Get" Id="{7a1cff51-fc13-4d97-894d-1518b53cce43}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[wasThrown := THIS^.wasThrownMarker;]]></ST>
+        </Implementation>
+      </Get>
+      <Set Name="Set" Id="{d710f479-d61a-4106-8fa8-fbc77d5c44c4}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[THIS^.wasThrownMarker := wasThrown;]]></ST>
+        </Implementation>
+      </Set>
+    </Property>
+  </POU>
+</TcPlcObject>

@@ -1,0 +1,127 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1">
+  <Itf Name="IStopRequestConfiguration" Id="{b9569ba7-02fa-4bc9-8787-b707b195942b}">
+    <Declaration><![CDATA[(*
+
+## Short summary
+An interface to configure stop request behavior.
+
+.. <legal notes>
+
+legal notes
+=================
+| SPDX-FileCopyrightText: © 2024 ekvip automation GmbH <info@ekvip.de>
+| SPDX-License-Identifier: Apache-2.0
+| For details check: Apache-2.0_
+
+.. _Apache-2.0: https://www.apache.org/licenses/LICENSE-2.0
+
+.. </legal notes>
+
+
+
+*)
+INTERFACE IStopRequestConfiguration EXTENDS __System.IQueryInterface
+]]></Declaration>
+    <Method Name="afterSuccessfulStep" Id="{7e4bde1f-7bd1-40a2-bb78-e6e602d295ea}">
+      <Declaration><![CDATA[(*
+
+## Short summary
+This method sets the stop request behaviour to ``StepStopRequestMode.AFTER_SUCCESSFUL_STEP``.
+If the StopRequest signal is active, the cycle manager will move to succees if the current step was successful during the update call.
+
+.. <legal notes>
+
+legal notes
+=================
+| SPDX-FileCopyrightText: © 2024 ekvip automation GmbH <info@ekvip.de>
+| SPDX-License-Identifier: Apache-2.0
+| For details check: Apache-2.0_
+
+.. _Apache-2.0: https://www.apache.org/licenses/LICENSE-2.0
+
+.. </legal notes>
+
+
+*)
+
+METHOD afterSuccessfulStep
+]]></Declaration>
+    </Method>
+    <Method Name="ignore" Id="{aa462178-324e-42aa-b49f-7ce10887d1a8}">
+      <Declaration><![CDATA[(*
+
+## Short summary
+This method sets the stop request behaviour to ``StepStopRequestMode.IGNORE``.
+The cycle manager will ignore the stop request signal.
+
+.. <legal notes>
+
+legal notes
+=================
+| SPDX-FileCopyrightText: © 2024 ekvip automation GmbH <info@ekvip.de>
+| SPDX-License-Identifier: Apache-2.0
+| For details check: Apache-2.0_
+
+.. _Apache-2.0: https://www.apache.org/licenses/LICENSE-2.0
+
+.. </legal notes>
+
+
+*)
+
+METHOD ignore
+]]></Declaration>
+    </Method>
+    <Method Name="immediate" Id="{363664a5-51f2-436f-847c-4e5448742d82}">
+      <Declaration><![CDATA[(*
+
+## Short summary
+This method sets the stop request behaviour to ``StepStopRequestMode.IMMEDIATE``.
+If the StopRequest signal is active, the cycle manager will always move to succees during the update call.
+
+.. <legal notes>
+
+legal notes
+=================
+| SPDX-FileCopyrightText: © 2024 ekvip automation GmbH <info@ekvip.de>
+| SPDX-License-Identifier: Apache-2.0
+| For details check: Apache-2.0_
+
+.. _Apache-2.0: https://www.apache.org/licenses/LICENSE-2.0
+
+.. </legal notes>
+
+
+*)
+
+METHOD immediate
+]]></Declaration>
+    </Method>
+    <Method Name="onBusy" Id="{69c8bd55-7221-43b9-a688-3d05246d0dfa}">
+      <Declaration><![CDATA[(*
+
+## Short summary
+This method sets the stop request behaviour to ``StepStopRequestMode.ON_BUSY``.
+If the StopRequest signal is active, the cycle manager will move to succees if the current step was busy during the update call.
+
+.. <legal notes>
+
+legal notes
+=================
+| SPDX-FileCopyrightText: © 2024 ekvip automation GmbH <info@ekvip.de>
+| SPDX-License-Identifier: Apache-2.0
+| For details check: Apache-2.0_
+
+.. _Apache-2.0: https://www.apache.org/licenses/LICENSE-2.0
+
+.. </legal notes>
+
+*)
+
+METHOD onBusy
+
+]]></Declaration>
+    </Method>
+  </Itf>
+</TcPlcObject>

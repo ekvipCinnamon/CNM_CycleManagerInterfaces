@@ -1,0 +1,255 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1">
+  <Itf Name="ICycleSteps" Id="{f34671cb-5eab-48ae-97d8-1f383471f29f}">
+    <Declaration><![CDATA[(*
+
+## Short summary
+An interface to provide last, current and next step properties in cycle management.
+
+.. <legal notes>
+
+legal notes
+=================
+| SPDX-FileCopyrightText: © 2024 ekvip automation GmbH <info@ekvip.de>
+| SPDX-License-Identifier: Apache-2.0
+| For details check: Apache-2.0_
+
+.. _Apache-2.0: https://www.apache.org/licenses/LICENSE-2.0
+
+.. </legal notes>
+
+
+
+*)
+INTERFACE ICycleSteps EXTENDS __System.IQueryInterface
+]]></Declaration>
+    <Property Name="current" Id="{8b2b4d0a-58a7-47f5-9472-96f505210d06}">
+      <Declaration><![CDATA[(*
+
+## Short summary
+This property returns the current step of the cycle manager.
+Proposed use is as CASE control.
+
+### Purpose and usage
+This property provides the current step number of the cycle manager for implementing step-based control logic.
+It is primarily used in CASE statements to execute different actions based on the current step.
+
+The property is read-only and returns the current step as a DINT value.
+
+**return**
+DINT: Current step number of the cycle manager
+
+### Typical usage patterns
+1. **CASE control structure**: Main usage in CASE statements for step-based execution
+2. **Step monitoring**: Reading current step for HMI display or logging
+3. **Conditional logic**: Checking current step for specific conditions
+
+### When to use
+- In every cycle manager implementation for step-based control
+- When you need to display current step status
+- For debugging and logging purposes
+- When implementing conditional logic based on current step
+
+**Example:**
+```
+CASE cyclemanager.steps.current OF
+DefaultSteps.STEP.IDLE:
+	// Initialize sequence
+	;
+DefaultSteps.STEP.INIT:
+	// Perform initialization
+	;
+2:
+	// Custom step - move to position
+	;
+3:
+	// Custom step - perform operation
+	;
+4:
+	// Custom step - finalize
+	;
+DefaultSteps.STEP.SUCCESS:
+	// Sequence completed successfully
+	;
+DefaultSteps.STEP.ERROR:
+	// Handle error conditions
+	;
+DefaultSteps.STEP.ABORT:
+	// Handle abort conditions
+	;
+ELSE 
+	// Handle unexpected steps
+	;
+END_CASE
+
+// Usage for monitoring
+currentStepForHMI := cyclemanager.steps.current;
+```
+
+.. <legal notes>
+
+legal notes
+=================
+| SPDX-FileCopyrightText: © 2024 ekvip automation GmbH <info@ekvip.de>
+| SPDX-License-Identifier: Apache-2.0
+| For details check: Apache-2.0_
+
+.. _Apache-2.0: https://www.apache.org/licenses/LICENSE-2.0
+
+.. </legal notes>
+
+*)
+PROPERTY current :DINT]]></Declaration>
+      <Get Name="Get" Id="{e1deb813-d220-470f-b5a3-08b3b08d55a3}">
+        <Declaration><![CDATA[]]></Declaration>
+      </Get>
+    </Property>
+    <Property Name="last" Id="{7d5e95ef-d976-4069-8a61-eaf77289b29f}">
+      <Declaration><![CDATA[(*
+
+## Short summary
+This property returns the last step of the cycle manager, useful for error steps.
+
+### Purpose and usage
+This property provides the last executed step number of the cycle manager, primarily used for error handling and recovery operations.
+It allows returning to the previous step for retry operations or error recovery procedures.
+
+The property is read-only and returns the last step as a DINT value.
+
+**return**
+DINT: Last executed step number of the cycle manager
+
+### Typical usage patterns
+1. **Error recovery**: Returning to previous step after error handling
+2. **Retry operations**: Going back one step to retry failed operations
+3. **Step debugging**: Tracking step transitions for debugging purposes
+4. **Conditional branching**: Making decisions based on where the error occurred
+
+### When to use
+- In error handling steps to implement retry logic
+- When you need to return to the previous step after error resolution
+- For debugging step transitions and sequence flow
+- In timeout handling to retry the previous operation
+
+**Example:**
+```
+// Error handling with retry logic
+TIMEOUT_STEP_FOR_RETRY:
+	cM.steps.next := cM.steps.last - 1;  // Go back to previous step
+	cM.waitFor(ACK);
+
+// Error step with conditional recovery
+DefaultSteps.STEP.ERROR:
+	IF retry_counter < MAX_RETRIES THEN
+		retry_counter := retry_counter + 1;
+		cM.steps.next := cM.steps.last;  // Retry the failed step
+	ELSE
+		cM.steps.next := DefaultSteps.STEP.ABORT;  // Give up after max retries
+	END_IF;
+
+// Step transition logging
+logger.logStepTransition(cM.steps.last, cM.steps.current);
+```
+
+.. <legal notes>
+
+legal notes
+=================
+| SPDX-FileCopyrightText: © 2024 ekvip automation GmbH <info@ekvip.de>
+| SPDX-License-Identifier: Apache-2.0
+| For details check: Apache-2.0_
+
+.. _Apache-2.0: https://www.apache.org/licenses/LICENSE-2.0
+
+.. </legal notes>
+
+*)
+PROPERTY last :DINT]]></Declaration>
+      <Get Name="Get" Id="{9bb6fded-18e4-43b6-b69e-f08b4c6e6635}">
+        <Declaration><![CDATA[]]></Declaration>
+      </Get>
+    </Property>
+    <Property Name="next" Id="{a556b36a-1871-45fd-b6f9-c52b85ac63c6}">
+      <Declaration><![CDATA[(*
+
+## Short summary
+This property sets the next step of the cycle manager.
+
+### Purpose and usage
+This property sets the next step that the cycle manager should execute after completing the current step.
+It provides explicit control over the sequence flow, allowing for conditional branching, error handling, and custom step sequencing.
+
+The property is write-only and accepts a DINT value representing the target step number.
+
+### Typical usage patterns
+1. **Conditional branching**: Setting different next steps based on conditions
+2. **Error handling**: Directing flow to error or recovery steps
+3. **Sequential control**: Explicitly controlling step progression
+4. **Skip operations**: Jumping over steps that are not needed
+
+### When to use
+- When you need to control step progression explicitly
+- For conditional branching based on process conditions
+- In error handling to redirect to error steps
+- When implementing complex sequence logic with jumps
+- For skipping steps that are not required in current context
+
+### Parameter validation
+- Step number should be a valid step in your sequence
+- Negative step numbers are typically reserved for system steps
+- Use DefaultSteps.STEP constants for standard steps (IDLE, INIT, SUCCESS, ERROR, ABORT)
+
+**Example:**
+```
+// Conditional branching
+MY_STEP:
+	IF process_complete THEN
+		cyclemanager.steps.next := SUCCESS_STEP;
+	ELSE
+		cyclemanager.steps.next := CONTINUE_PROCESS_STEP;
+	END_IF;
+	cyclemanager.executeCommand(finalizeProcess);
+
+// Error handling
+PROCESS_STEP:
+	IF error_detected THEN
+		cyclemanager.steps.next := DefaultSteps.STEP.ERROR;
+	ELSE
+		cyclemanager.steps.next := NEXT_PROCESS_STEP;
+	END_IF;
+
+// Skip operation based on condition
+OPTIONAL_STEP_CHECK:
+	IF skip_calibration THEN
+		cyclemanager.steps.next := MAIN_OPERATION_STEP;  // Skip calibration
+	ELSE
+		cyclemanager.steps.next := CALIBRATION_STEP;     // Perform calibration
+	END_IF;
+```
+
+.. <legal notes>
+
+legal notes
+=================
+| SPDX-FileCopyrightText: © 2024 ekvip automation GmbH <info@ekvip.de>
+| SPDX-License-Identifier: Apache-2.0
+| For details check: Apache-2.0_
+
+.. _Apache-2.0: https://www.apache.org/licenses/LICENSE-2.0
+
+.. </legal notes>
+
+*)
+PROPERTY next :DINT
+]]></Declaration>
+      <Get Name="Get" Id="{9cff72d3-4c5c-4d9f-8b4c-da952345a685}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+      </Get>
+      <Set Name="Set" Id="{6d9765b5-5866-45a3-8df5-ed38c6643b00}">
+        <Declaration><![CDATA[]]></Declaration>
+      </Set>
+    </Property>
+  </Itf>
+</TcPlcObject>

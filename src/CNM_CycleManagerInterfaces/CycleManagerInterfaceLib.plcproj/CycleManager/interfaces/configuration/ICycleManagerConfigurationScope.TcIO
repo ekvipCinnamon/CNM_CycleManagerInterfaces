@@ -1,0 +1,39 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1">
+  <Itf Name="ICycleManagerConfigurationScope" Id="{c122f52e-d3a1-4c60-a305-86516c0d5d69}">
+    <Declaration><![CDATA[(*
+
+## Short summary
+An interface to provide a scope selector for configurations in cycle managers.
+
+.. <legal notes>
+
+legal notes
+=================
+| SPDX-FileCopyrightText: © 2024 ekvip automation GmbH <info@ekvip.de>
+| SPDX-License-Identifier: Apache-2.0
+| For details check: Apache-2.0_
+
+.. _Apache-2.0: https://www.apache.org/licenses/LICENSE-2.0
+
+.. </legal notes>
+
+
+
+*)
+INTERFACE ICycleManagerConfigurationScope EXTENDS __SYSTEM.IQueryInterface
+]]></Declaration>
+    <Property Name="sequence" Id="{d0fab6ee-0931-4bbf-97f7-0a8f613aeb45}">
+      <Declaration><![CDATA[PROPERTY sequence : ISequenceConfiguration]]></Declaration>
+      <Get Name="Get" Id="{76d3e71e-6c42-4f08-8095-6f219f39e954}">
+        <Declaration><![CDATA[]]></Declaration>
+      </Get>
+    </Property>
+    <Property Name="step" Id="{6b1a3255-99c7-49dc-9820-9c51898dbdb4}">
+      <Declaration><![CDATA[PROPERTY step : IStepConfiguration]]></Declaration>
+      <Get Name="Get" Id="{9d4fcf23-5044-45a6-9320-50626c390f52}">
+        <Declaration><![CDATA[]]></Declaration>
+      </Get>
+    </Property>
+  </Itf>
+</TcPlcObject>

@@ -1,0 +1,210 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1">
+  <Itf Name="ICycleManagerParameters" Id="{c0ff80a3-3ce7-4540-9330-bad68174d20a}">
+    <Declaration><![CDATA[(*
+
+## Short summary
+An interface to provide configurations for the cycle manager parameters.
+
+.. <legal notes>
+
+legal notes
+=================
+| SPDX-FileCopyrightText: © 2024 ekvip automation GmbH <info@ekvip.de>
+| SPDX-License-Identifier: Apache-2.0
+| For details check: Apache-2.0_
+
+.. _Apache-2.0: https://www.apache.org/licenses/LICENSE-2.0
+
+.. </legal notes>
+
+
+
+*)
+INTERFACE ICycleManagerParameters EXTENDS __System.IQueryInterface
+]]></Declaration>
+    <Property Name="errorStep" Id="{741ab35b-fe24-40f4-ac06-84414777fa09}">
+      <Declaration><![CDATA[(*
+
+## Short summary
+This property sets the next step in case of an error.
+
+.. <legal notes>
+
+legal notes
+=================
+| SPDX-FileCopyrightText: © 2024 ekvip automation GmbH <info@ekvip.de>
+| SPDX-License-Identifier: Apache-2.0
+| For details check: Apache-2.0_
+
+.. _Apache-2.0: https://www.apache.org/licenses/LICENSE-2.0
+
+.. </legal notes>
+
+*)
+PROPERTY errorStep :DINT]]></Declaration>
+      <Set Name="Set" Id="{a8fa3466-fec7-47b8-a674-5495ffd9f675}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+      </Set>
+    </Property>
+    <Property Name="pause" Id="{95150637-8390-4011-b202-8e09ff90c202}">
+      <Declaration><![CDATA[(*
+
+## Short summary
+This property allows enabling and disabling pausing.
+
+.. <legal notes>
+
+legal notes
+=================
+| SPDX-FileCopyrightText: © 2024 ekvip automation GmbH <info@ekvip.de>
+| SPDX-License-Identifier: Apache-2.0
+| For details check: Apache-2.0_
+
+.. _Apache-2.0: https://www.apache.org/licenses/LICENSE-2.0
+
+.. </legal notes>
+
+*)
+
+PROPERTY pause : IPauseConfiguration
+]]></Declaration>
+      <Get Name="Get" Id="{97cdb418-d7cf-406f-900a-6df38cdd056e}">
+        <Declaration><![CDATA[]]></Declaration>
+      </Get>
+    </Property>
+    <Property Name="stepping" Id="{950da9df-4d00-4b0e-9dc6-db5de0d01833}">
+      <Declaration><![CDATA[(*
+
+## Short summary
+This property allows enabling and disabling stepping mode.
+
+.. <legal notes>
+
+legal notes
+=================
+| SPDX-FileCopyrightText: © 2024 ekvip automation GmbH <info@ekvip.de>
+| SPDX-License-Identifier: Apache-2.0
+| For details check: Apache-2.0_
+
+.. _Apache-2.0: https://www.apache.org/licenses/LICENSE-2.0
+
+.. </legal notes>
+
+*)
+
+PROPERTY stepping : ISteppingConfiguration
+]]></Declaration>
+      <Get Name="Get" Id="{c9dc4684-da54-4be5-9366-b87bacde3dce}">
+        <Declaration><![CDATA[]]></Declaration>
+      </Get>
+    </Property>
+    <Property Name="stepWidth" Id="{a05f54fd-63b1-4feb-a5a7-0bd574254a37}">
+      <Declaration><![CDATA[(*
+
+## Short summary
+This property sets the step width when proceeding automatically.
+This defaults to 1.
+
+.. <legal notes>
+
+legal notes
+=================
+| SPDX-FileCopyrightText: © 2024 ekvip automation GmbH <info@ekvip.de>
+| SPDX-License-Identifier: Apache-2.0
+| For details check: Apache-2.0_
+
+.. _Apache-2.0: https://www.apache.org/licenses/LICENSE-2.0
+
+.. </legal notes>
+
+*)
+PROPERTY stepWidth : DINT
+]]></Declaration>
+      <Set Name="Set" Id="{ad01c75a-4a28-4fcc-8ef9-14417c365a0e}">
+        <Declaration><![CDATA[]]></Declaration>
+      </Set>
+    </Property>
+    <Property Name="stopRequest" Id="{653ebb95-4c37-41b3-911b-3e80c84eef0f}">
+      <Declaration><![CDATA[(*
+
+## Short summary
+This property allows changing the stop request behaviour in case of active stop request.
+
+.. <legal notes>
+
+legal notes
+=================
+| SPDX-FileCopyrightText: © 2024 ekvip automation GmbH <info@ekvip.de>
+| SPDX-License-Identifier: Apache-2.0
+| For details check: Apache-2.0_
+
+.. _Apache-2.0: https://www.apache.org/licenses/LICENSE-2.0
+
+.. </legal notes>
+
+*)
+PROPERTY stopRequest : IStopRequestConfiguration
+]]></Declaration>
+      <Get Name="Get" Id="{40980216-2863-4f54-8815-f0bbdd9641db}">
+        <Declaration><![CDATA[]]></Declaration>
+      </Get>
+    </Property>
+    <Property Name="timeout" Id="{3da64abb-c845-4f34-832f-62051bed949f}">
+      <Declaration><![CDATA[(*
+
+## Short summary
+This property sets the maximum execution time for steps. 
+The cycle manager will go into the timeoutStep after the time elapsed.
+Set to T#0MS for no timeout (infinite), default.
+
+.. <legal notes>
+
+legal notes
+=================
+| SPDX-FileCopyrightText: © 2024 ekvip automation GmbH <info@ekvip.de>
+| SPDX-License-Identifier: Apache-2.0
+| For details check: Apache-2.0_
+
+.. _Apache-2.0: https://www.apache.org/licenses/LICENSE-2.0
+
+.. </legal notes>
+
+*)
+PROPERTY timeout :TIME]]></Declaration>
+      <Set Name="Set" Id="{34fc8336-ef41-4c77-bee1-bfca47fc65ae}">
+        <Declaration><![CDATA[]]></Declaration>
+      </Set>
+    </Property>
+    <Property Name="timeoutStep" Id="{e2323a8d-1d30-45f2-a040-70e856046ce8}">
+      <Declaration><![CDATA[(*
+
+## Short summary
+This property sets the step that will be set if the current step reaches a timeout. 
+If not changed will default to the current errorStep.
+
+.. <legal notes>
+
+legal notes
+=================
+| SPDX-FileCopyrightText: © 2024 ekvip automation GmbH <info@ekvip.de>
+| SPDX-License-Identifier: Apache-2.0
+| For details check: Apache-2.0_
+
+.. _Apache-2.0: https://www.apache.org/licenses/LICENSE-2.0
+
+.. </legal notes>
+
+*)
+PROPERTY timeoutStep :DINT
+]]></Declaration>
+      <Set Name="Set" Id="{bef3f8a4-e408-4151-814f-183a1995bfe9}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+      </Set>
+    </Property>
+  </Itf>
+</TcPlcObject>

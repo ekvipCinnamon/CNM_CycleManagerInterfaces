@@ -1,0 +1,25 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Refactors>
+  <Renames>
+    <RenamedType>
+      <Type guid="69c8bd55-7221-43b9-a688-3d05246d0dfa">AFTERNOTSUCCESS</Type>
+      <From>afterNotSuccess</From>
+      <To>onBusy</To>
+    </RenamedType>
+    <RenamedSymbol>
+      <Type guid="d72e9327-bb3f-411a-af36-b3e8da56b403">StepStopRequestMode</Type>
+      <From>AFTER_SUCCESS</From>
+      <To>ON_SUCCESS</To>
+    </RenamedSymbol>
+    <RenamedType>
+      <Type guid="7e4bde1f-7bd1-40a2-bb78-e6e602d295ea">ONSUCCESS</Type>
+      <From>afterSuccess</From>
+      <To>afterSuccessfulStep</To>
+    </RenamedType>
+    <RenamedType>
+      <Type guid="363664a5-51f2-436f-847c-4e5448742d82">IMMEDIATELY</Type>
+      <From>always</From>
+      <To>immediate</To>
+    </RenamedType>
+  </Renames>
+</Refactors>

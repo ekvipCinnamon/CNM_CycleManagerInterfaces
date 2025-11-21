@@ -1,0 +1,285 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1">
+  <Itf Name="ICycleError" Id="{f3ce71bc-f2ed-4c81-9743-17aded1ed08a}">
+    <Declaration><![CDATA[(*
+
+## Short summary
+An interface to provide error handling in cycle management.
+
+.. <legal notes>
+
+legal notes
+=================
+| SPDX-FileCopyrightText: © 2024 ekvip automation GmbH <info@ekvip.de>
+| SPDX-License-Identifier: Apache-2.0
+| For details check: Apache-2.0_
+
+.. _Apache-2.0: https://www.apache.org/licenses/LICENSE-2.0
+
+.. </legal notes>
+
+
+
+*)
+INTERFACE ICycleError EXTENDS __System.IQueryInterface
+]]></Declaration>
+    <Method Name="acknowledge" Id="{37727662-c6d5-4ebe-ad08-9e9fe00f8d8d}">
+      <Declaration><![CDATA[(*
+
+## Short summary
+This method acknowledges an error in the cycle manager 
+and resets the current step to the step before the error occurred.
+
+
+### Purpose and usage
+This method provides error acknowledgment functionality for the cycle manager. It clears the current error state
+and returns the cycle manager to the step that was executing before the error occurred, allowing for error recovery
+and continuation of the sequence.
+
+The method should be called when an operator or system wants to acknowledge an error and attempt to continue
+the process from where it left off.
+
+### Typical usage patterns
+
+1. **Manual error acknowledgment**: Operator acknowledges error via HMI button
+2. **Automatic error recovery**: System automatically acknowledges after conditions are met
+3. **Retry operations**: Acknowledge error to retry the failed step
+4. **Error logging**: Acknowledge error after logging for audit trail
+
+#### When to use
+
+- When an error has been resolved and process should continue
+- After manual operator intervention to fix the error condition
+- In automated error recovery scenarios
+- When implementing retry logic after temporary failures
+
+### behavior
+
+- Clears the error state flag
+- Returns cycle manager to the last successful step
+- Resets internal error tracking variables
+- Allows normal sequence progression to resume
+
+**Example:**
+```
+// Manual error acknowledgment via HMI
+IF HMI_acknowledge_button THEN
+	cyclemanager.errors.acknowledge();
+	HMI_acknowledge_button := FALSE;
+END_IF;
+
+// Automatic error acknowledgment after condition resolution
+ERROR_STEP:
+	IF error_condition_resolved THEN
+		cyclemanager.errors.acknowledge();  // Return to previous step
+	END_IF;
+
+// Error acknowledgment with logging
+IF error_acknowledged_by_operator THEN
+	logger.logEvent('Error acknowledged by operator');
+	cyclemanager.errors.acknowledge();
+	error_acknowledged_by_operator := FALSE;
+END_IF;
+```
+
+.. <legal notes>
+
+legal notes
+=================
+| SPDX-FileCopyrightText: © 2024 ekvip automation GmbH <info@ekvip.de>
+| SPDX-License-Identifier: Apache-2.0
+| For details check: Apache-2.0_
+
+.. _Apache-2.0: https://www.apache.org/licenses/LICENSE-2.0
+
+.. </legal notes>
+
+*)
+METHOD acknowledge
+]]></Declaration>
+    </Method>
+    <Method Name="handle" Id="{e903c356-060a-4423-b233-810aef93113d}">
+      <Declaration><![CDATA[(*
+
+## Short summary
+This method throws an alarm and waits for it to be confirmed. 
+When the alarm was confirmed the cyclemanager will proceed to next configured step.
+If the current step is the result of an evaluated error state and the input 'resumeWithLastStep' is set to true, the cyclemanager will proceed to the last step.
+**Warning:**  The 'resumeWithLastStep' flag will be ignored if the last step was successful.
+
+### Purpose and usage
+This method provides comprehensive error handling by displaying an alarm to the operator and managing 
+the subsequent cycle manager behavior based on the error acknowledgment. It integrates alarm management
+with cycle flow control for robust error handling.
+
+The method blocks execution until the alarm is acknowledged and then determines the next step based
+on the error context and resumeWithLastStep parameter.
+
+### Typical usage patterns
+1. **Critical error handling**: Display alarm for critical errors requiring operator intervention
+2. **Process deviation handling**: Show alarm when process parameters are out of range
+3. **Equipment failure handling**: Alert operators to equipment malfunctions
+4. **Recovery operations**: Provide options for continuing after error resolution
+
+### When to use
+- When an error requires operator notification and acknowledgment
+- For errors that need to be logged and tracked in the alarm system
+- When you need flexible recovery options (continue or retry)
+- For integrating cycle management with plant-wide alarm systems
+
+### Behaviour details
+- Displays the alarm using the CNM message system
+- Blocks cycle progression until alarm is acknowledged
+- If resumeWithLastStep=TRUE and step was reached via error: returns to last step
+- If resumeWithLastStep=FALSE: proceeds to next configured step
+- Warning: resumeWithLastStep is ignored if last step was successful
+
+### Parameter validation
+- alarm parameter must be a valid IAlarm instance
+- resumeWithLastStep flag only affects behavior when current step resulted from error evaluation
+
+**Example:**
+```
+// Basic error handling with alarm
+PROCESS_STEP:
+	IF motor_overload_detected THEN
+		cyclemanager.errors.handle(motor_overload_alarm, TRUE);  // Resume with last step after ack
+	END_IF;
+
+// Error handling with different recovery strategies
+CRITICAL_OPERATION:
+	IF safety_violation THEN
+		cyclemanager.errors.handle(safety_alarm, FALSE);  // Don't resume, go to next step
+	ELSIF equipment_fault THEN
+		cyclemanager.errors.handle(equipment_alarm, TRUE);  // Allow retry of operation
+	END_IF;
+
+// Complex error handling with context
+VAR
+	process_error_alarm : ProcessErrorAlarm;
+END_VAR
+
+MONITORING_STEP:
+	IF temperature_out_of_range THEN
+		process_error_alarm.setMessage('Temperature exceeded limits');
+		process_error_alarm.setSeverity(AlarmSeverity.WARNING);
+		cyclemanager.errors.handle(process_error_alarm, TRUE);
+	END_IF;
+```
+
+.. <legal notes>
+
+legal notes
+=================
+| SPDX-FileCopyrightText: © 2024 ekvip automation GmbH <info@ekvip.de>
+| SPDX-License-Identifier: Apache-2.0
+| For details check: Apache-2.0_
+
+.. _Apache-2.0: https://www.apache.org/licenses/LICENSE-2.0
+
+.. </legal notes>
+
+*)
+
+METHOD handle
+VAR_INPUT
+	(* the alarm event that should be thrown *)
+	alarm :CNM_MessageInterfaces.IAlarm;
+	(* if this flag is set AND we got to the current step because of an ERROR state, then the cyclemanager will automatically will go back to the last step *)
+	resumeWithLastStep :BOOL := TRUE;
+END_VAR
+]]></Declaration>
+    </Method>
+    <Property Name="isInErrorStep" Id="{7821e8b9-3abb-424e-9627-86f74518bfe8}">
+      <Declaration><![CDATA[(*
+
+## Short summary
+This property returns TRUE if the step was reached by evaluating an error.
+
+### Purpose and usage
+This property provides status information about how the current step was reached. It indicates whether 
+the cycle manager arrived at the current step as a result of an error evaluation, which is crucial
+for implementing context-aware error handling and recovery logic.
+
+The property is read-only and returns a boolean value indicating error context.
+
+**return**
+BOOL: TRUE if current step was reached by error evaluation, FALSE if reached through normal flow
+
+### Typical usage patterns
+1. **Conditional error handling**: Different behavior based on how step was reached
+2. **Recovery decision making**: Determine appropriate recovery actions
+3. **Error logging**: Log additional context about error conditions
+4. **UI feedback**: Show different information based on error context
+
+### When to use
+- In error handling steps to determine recovery strategy
+- When implementing different behaviors for error vs. normal flow
+- For logging and audit trail purposes
+- In HMI displays to show appropriate error context
+
+### Behaviour details
+- Returns TRUE when step was reached via error evaluation (e.g., command returned ERROR state)
+- Returns FALSE when step was reached through normal progression
+- Useful for implementing smart error recovery logic
+- Context is maintained until step changes or error is acknowledged
+
+**Example:**
+```
+// Context-aware error handling
+ERROR_STEP:
+	IF cyclemanager.errors.isInErrorStep THEN
+		// This step was reached due to an error
+		display_error_message := 'Process failed - manual intervention required';
+		allow_retry := TRUE;
+	ELSE
+		// This step was reached through normal flow
+		display_error_message := 'Manual error step - check process conditions';
+		allow_retry := FALSE;
+	END_IF;
+
+// Different recovery strategies based on context
+RECOVERY_STEP:
+	IF cyclemanager.errors.isInErrorStep THEN
+		// Automatic retry for error-triggered steps
+		IF retry_count < MAX_RETRIES THEN
+			cyclemanager.errors.acknowledge();  // Try again
+		ELSE
+			cyclemanager.steps.next := ABORT_STEP;  // Give up
+		END_IF;
+	ELSE
+		// Manual step - wait for operator decision
+		cyclemanager.waitFor(operator_continue_signal);
+	END_IF;
+
+// Error logging with context
+IF log_step_entry THEN
+	IF cyclemanager.errors.isInErrorStep THEN
+		logger.logError('Entered step due to error condition');
+	ELSE
+		logger.logInfo('Entered step through normal flow');
+	END_IF;
+	log_step_entry := FALSE;
+END_IF;
+
+.. <legal notes>
+
+legal notes
+=================
+| SPDX-FileCopyrightText: © 2024 ekvip automation GmbH <info@ekvip.de>
+| SPDX-License-Identifier: Apache-2.0
+| For details check: Apache-2.0_
+
+.. _Apache-2.0: https://www.apache.org/licenses/LICENSE-2.0
+
+.. </legal notes>
+
+*)
+PROPERTY isInErrorStep : BOOL
+]]></Declaration>
+      <Get Name="Get" Id="{c487198d-09d1-4b93-9710-1653c3d2a0f7}">
+        <Declaration><![CDATA[]]></Declaration>
+      </Get>
+    </Property>
+  </Itf>
+</TcPlcObject>
